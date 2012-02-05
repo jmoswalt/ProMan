@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}{% endblock title %} - ProMon Project Management Tools</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+    
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    
+    <!-- Le styles -->
+    <link href="{{ STATIC_URL }}css/bootstrap-custom.css" rel="stylesheet">
+    {% block css %}
+    <style>
+        a.active { color: red; }
+    </style>
+    {% endblock css %}
+    
+    {% block head %}{% endblock head %}
+    
+    <!-- Le fav and touch icons -->
+    <!-- <link rel="shortcut icon" href="images/favicon.ico"> -->
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+</head>
+<body>
+    {% include "navbar.html" %}
+    <div class="container">
+        {% block body %}{% endblock body %}
+        {% include "footer.html" %}
+    </div> <!-- /container -->
+    <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-alert.js"></script>
+    {% block js %}{% endblock js %}
+</body>
+</html>

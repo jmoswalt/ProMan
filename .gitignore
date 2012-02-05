@@ -1,0 +1,17 @@
+# Ignore all local development files
+local_settings.py
+local_urls.py
+django
+*.db
+
+# ignore static
+static/*
+
+# Ignore dotfiles
+.*
+
+# Ignore pyc file
+*.pyc
+
+# except for .gitignore
+!.gitignore

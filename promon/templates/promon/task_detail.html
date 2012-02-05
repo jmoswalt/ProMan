@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Task: {{ task.title }}{% endblock title %}
+
+{% block body %}
+<div class="content project project-detail">
+    <div class="page-header">
+        <h1>{{ task.title }} <small>Est: {{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</small></h1>
+    </div>
+    <div class="row">
+        {% include "messages.html" %}
+        <div class="span8">
+            {% if task.overdue %}
+            <div class="alert alert-error">
+                <a class="close">×</a>
+                <p><strong>Overdue!!!</strong> This task has been overdue for {{ task.due_dt|timesince }}. Please do it or update it and tell {{ task.original_creator.first_name }} {{ task.original_creator.last_name|slice:":1" }}.</p>
+            </div>
+            {% endif %}
+            <p>{{ task.description|safe|linebreaks }}</p>
+            {% if task.resolution and task.status == "Done" %}
+            <div class="alert alert-block alert-success">
+                <h4 class="alert-heading">This task has been closed.</h4>
+                <p>{{ task.resolution }}</p>
+            </div>
+            {% endif %}
+            <div id="task-logs">
+            <ul>
+            {% for item in task_logs %}
+                <li>{{ item.user.first_name }} {{ item.change_message }} on {{ item.action_time|date:"n/j/Y" }} at {{ item.action_time|date:"P" }} </li>
+            {% endfor %}
+            </ul>
+            </div>
+        </div>
+        <div class="span4">
+            <p><strong>Assigned to:</strong> <a href="{% url user_detail task.assignee.username %}">{{ task.assignee.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a><br />
+            <strong>Due Date:</strong> <span class="colorize{% if task.status != "Done" %} {{ task.due_class }}{% endif %}">{{ task.due_dt|date:"l, n/j" }}</span><br />
+            <strong>Status:</strong> {{ task.status }}<br />
+            
+            {% if task.billable %}
+                <span class="label success">Billable</span>
+            {% else %}
+                <span class="label important">Non-Billable</span>
+            {% endif %}</p>
+            <p><a href="{% url task_update task.pk %}" class="btn primary">Edit Task</a> <a href="{% url task_update task.pk %}" class="btn success">Close Task</a></p>
+            <h2>Project info</h2>
+            <p><a href="{% url project_detail task.project.pk %}">{{ task.project.name }}</a><br />
+            <strong>Owner:</strong> <a href="{% url user_detail task.project.owner.username %}">{{ task.project.owner.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a><br />
+            <strong>Technology:</strong> {{ task.project.technology }}<br />
+            <strong>{{ task.project.age }}</strong> days old</p>
+        </div>
+    </div>
+</div>
+{% endblock body %}

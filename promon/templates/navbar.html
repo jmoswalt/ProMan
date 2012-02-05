@@ -1,0 +1,17 @@
+    <div class="navbar navbar-fixed">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="brand" href="/">ProMon</a>
+          <ul class="nav">
+            <li{% if user_object or users %} class="active"{% endif %}><a href="{% url users %}">People</a></li>
+            <li class="dropdown{% if project or projects %} active{% endif %}"><a class="dropdown-toggle"
+          data-toggle="dropdown" href="{% url projects %}">Projects <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                    <li><a href="{% url project_create %}">Add a project</a></li>
+                </ul>
+            </li>
+            <li{% if task %} class="active"{% endif %}><a href="#Tasks">Tasks</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>

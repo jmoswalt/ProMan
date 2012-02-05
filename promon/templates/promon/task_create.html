@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Create a new Task{% endblock title %}
+
+{% block body %}
+<div class="content project project-detail">
+    <div class="page-header">
+        <h1>Create a Task <small>new</small></h1>
+    </div>
+    <div class="page-header">
+        <div class="row">
+        {% include "messages.html" %}
+            <div class="span8">
+            <form method="post" action="" class="form-horizontal">{% csrf_token %}
+                <legend>Create a task</legend>
+                {% for field in form %}
+                <div class="control-group">
+                    <label class="control-label" for="{{ field.label }}">{{ field.label }}</label>
+                    <div class="controls">
+                        {{ field }}
+                        <p class="help-block">{{ field.errors }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                <div class="form-actions">
+                    <button type="submit" class="btn success">Create a Task</button>
+                    <button type="reset" class="btn">Cancel</button>
+                </div>
+                </form>
+                
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock body %}
