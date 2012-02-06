@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from django.conf import settings
 from django.db.models import Q, Sum, Avg, Count
@@ -19,8 +19,8 @@ from django.core.mail import send_mail
 from promon.models import Project, Task, UserMethods
 from promon.forms import TaskForm, TaskMiniForm, ProjectForm
 
-START_DT_INITIAL = date.today()
-END_DT_INITIAL = date.today() + timedelta(days=90)
+START_DT_INITIAL = datetime.now()
+END_DT_INITIAL = datetime.now() + timedelta(days=90)
 
 
 class UserListView(ListView):
@@ -32,11 +32,6 @@ class UserListView(ListView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(UserListView, self).dispatch(*args, **kwargs)
-
-#     def get_context_data(self, **kwargs):
-#         context = super(UserListView, self).get_context_data(**kwargs)
-#         context['user_projects'] = Project.objects.filter(version=False).annotate(project_count=Count('project_owner_id')
-#         return context
 
 class UserDetailView(DetailView):
     model = UserMethods
@@ -66,8 +61,8 @@ class UserDetailView(DetailView):
         context['project_tasks_done'] = Task.objects.filter(version=False, assignee__username=self.kwargs['username'], status="done").order_by('due_dt')
         context['project_tasks_done_hours'] = context['project_tasks_done'].aggregate(total=Sum('task_time'))
         
-        context['user_projects'] = Project.objects.filter(version=False, project_owner__username=self.kwargs['username']).order_by('status', 'start_dt')
-        context['user_open_projects'] = Project.objects.filter(version=False, project_owner__username=self.kwargs['username']).exclude(status="done").aggregate(avg_start_date=Avg('start_dt'), total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
+        context['user_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).order_by('status', 'start_dt')
+        context['user_open_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).exclude(status="done").aggregate(avg_start_date=Avg('start_dt'), total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
         return context
 
     def get_object(self, **kwargs):
@@ -160,9 +155,9 @@ class TaskUpdateView(UpdateView):
             action_flag     = CHANGE,
             change_message  = change_message
         )
-        if self.request.user != self.object.assignee and new_obj.assignee != self.object.assignee:
-            # If you aren't changing to yourself, and the assignee changed, send them an email.
-            send_mail('[PM] Task Assigned %s' % self.object.title, "You've just been assigned the following task from %s: <br />%s (Link: %s%s)<br /><br /> %s<br /><br />" % (self.request.user.username, self.object.title, settings.SITE_URL, self.object.get_absolute_url(), self.object.description), self.request.user.email, [self.object.assignee.email], fail_silently=False)
+#         if self.request.user != self.object.assignee and new_obj.assignee != self.object.assignee:
+#             # If you aren't changing to yourself, and the assignee changed, send them an email.
+#             send_mail('[PM] Task Assigned %s' % self.object.title, "You've just been assigned the following task from %s: <br />%s (Link: %s%s)<br /><br /> %s<br /><br />" % (self.request.user.username, self.object.title, settings.SITE_URL, self.object.get_absolute_url(), self.object.description), self.request.user.email, [self.object.assignee.email], fail_silently=False)
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -203,7 +198,7 @@ class ProjectCreateView(CreateView):
     def get_initial(self):
         super(ProjectCreateView, self).get_initial()
         user = self.request.user
-        self.initial = {"project_owner":user.id, "start_dt": START_DT_INITIAL, "end_dt": END_DT_INITIAL}
+        self.initial = {"owner":user.id, "start_dt": START_DT_INITIAL, "end_dt": END_DT_INITIAL}
         return self.initial
     
     def form_valid(self, form):

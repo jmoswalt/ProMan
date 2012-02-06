@@ -25,9 +25,7 @@ urlpatterns = patterns('',
     url(r'^tasks/edit/(?P<pk>\d+)/$', views.TaskUpdateView.as_view(), name='task_update'),
     url(r'^tasks/(?P<pk>\d+)/$', views.TaskDetailView.as_view(), name='task_detail'),
 
-    # Uncomment the admin/doc line below to enable admin documentation:
-    # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
-    # Uncomment the next line to enable the admin:
+    url(r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'admin/login.html'}),
     url(r'^admin/', include(admin.site.urls)),
+    (r'^my_admin/jsi18n', 'django.views.i18n.javascript_catalog'),
 )

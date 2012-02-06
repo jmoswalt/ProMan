@@ -34,3 +34,11 @@
     </div>
 </div>
 {% endblock body %}
+
+{% block js %}
+<script type="text/javascript">
+$(document).ready(function() { 
+    $( "#id_due_dt" ).datepicker();
+});
+</script>
+{% endblock js %}

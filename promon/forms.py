@@ -1,8 +1,9 @@
-from datetime import date, timedelta
+from datetime import datetime, timedelta
 from django import forms
+from django.contrib.admin import widgets
 from promon.models import Task, Project
 
-DUE_DT_INITIAL = date.today() + timedelta(weeks=1)
+DUE_DT_INITIAL = datetime.now() + timedelta(weeks=1)
 
 class TaskForm(forms.ModelForm):
     class Meta:
@@ -33,7 +34,7 @@ class ProjectForm(forms.ModelForm):
         fields = (
             'name',
             'description',
-            'project_owner',
+            'owner',
             'start_dt',
             'end_dt',
             'task_budget',
@@ -64,7 +65,3 @@ class TaskMiniForm(forms.ModelForm):
         super(TaskMiniForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(version=False)
         self.fields['due_dt'].initial = DUE_DT_INITIAL
-#         if 'project' in kwargs:
-#             self.fields['project'].initial = kwargs['project']
-#         if 'assignee' in kwargs:
-#             self.fields['assignee'].initial = kwargs['assignee']

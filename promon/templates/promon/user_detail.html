@@ -115,7 +115,7 @@
             {% for task in user_done_project_tasks %}
                 <tr class="project-row">
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ task.title }}</td>
+                    <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a></td>
                     <td><a href="{% url project_detail task.project.pk %}">{{ task.project.name|title }}</a></td>
                     <td>{{ task.status }}</td>
                     <td>{{ task.due_dt|date:"D, n/j" }}</td>

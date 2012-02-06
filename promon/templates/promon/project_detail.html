@@ -62,7 +62,7 @@
             {% for task in project_tasks_stuck %}
                 <tr id="task-{{ task.pk }}">
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ task.title }}</td>
+                    <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a></td>
                     <td><a href="{% url user_detail task.assignee.username %}">{{ task.assignee.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a></td>
                     <td class="colorize {{ task.due_class }}">{{ task.due_dt|date:"D, n/j" }}</td>
                     <td>{{ task.task_time }}</td>
@@ -90,7 +90,7 @@
             {% for task in project_tasks_in_progress %}
                 <tr id="task-{{ task.pk }}">
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ task.title }}</td>
+                    <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a></td>
                     <td><a href="{% url user_detail task.assignee.username %}">{{ task.assignee.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a></td>
                     <td class="colorize {{ task.due_class }}">{{ task.due_dt|date:"D, n/j" }}</td>
                     <td>{{ task.task_time }}</td>
@@ -118,7 +118,7 @@
             {% for task in project_tasks_not_started %}
                 <tr id="task-{{ task.pk }}">
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ task.title }}</td>
+                    <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a></td>
                     <td><a href="{% url user_detail task.assignee.username %}">{{ task.assignee.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a></td>
                     <td class="colorize {{ task.due_class }}">{{ task.due_dt|date:"D, n/j" }}</td>
                     <td>{{ task.task_time }}</td>
@@ -146,7 +146,7 @@
             {% for task in project_tasks_done %}
                 <tr id="task-{{ task.pk }}">
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ task.title }}</td>
+                    <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a></td>
                     <td><a href="{% url user_detail task.assignee.username %}">{{ task.assignee.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a></td>
                     <td>{{ task.due_dt|date:"D, n/j" }}</td>
                     <td>{{ task.task_time }}</td>
@@ -196,6 +196,7 @@ $(document).ready(function(){
             console.log(objid)
             $("#task-"+objid).children().css('background-color','#DFF0D8');
         });
+        $( "#id_due_dt" ).datepicker();
 });
 </script>
 {% endblock js %}

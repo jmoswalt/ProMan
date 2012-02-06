@@ -5,7 +5,7 @@
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ task.title }} <small>Est: {{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</small></h1>
+        <h1>{{ task.title }} <small>Est: <strong></strong>{{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</strong> &mdash; Due: <strong>{{ task.due_dt|timeuntil }}</strong></small></h1>
     </div>
     <div class="row">
         {% include "messages.html" %}
@@ -16,7 +16,7 @@
                 <p><strong>Overdue!!!</strong> This task has been overdue for {{ task.due_dt|timesince }}. Please do it or update it and tell {{ task.original_creator.first_name }} {{ task.original_creator.last_name|slice:":1" }}.</p>
             </div>
             {% endif %}
-            <p>{{ task.description|safe|linebreaks }}</p>
+            <div>{{ task.description|safe|linebreaks }}</div>
             {% if task.resolution and task.status == "Done" %}
             <div class="alert alert-block alert-success">
                 <h4 class="alert-heading">This task has been closed.</h4>
@@ -24,6 +24,7 @@
             </div>
             {% endif %}
             <div id="task-logs">
+            <h3>Task changelog</h3>
             <ul>
             {% for item in task_logs %}
                 <li>{{ item.user.first_name }} {{ item.change_message }} on {{ item.action_time|date:"n/j/Y" }} at {{ item.action_time|date:"P" }} </li>

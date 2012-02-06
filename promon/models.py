@@ -1,5 +1,5 @@
 from decimal import Decimal
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 
 from django.db import models
 from django.db.models import Sum, Count
@@ -26,9 +26,9 @@ class Project(models.Model):
     """
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    project_owner = models.ForeignKey(User, related_name="project_owner")
-    start_dt = models.DateField(_('Start Date'))
-    end_dt = models.DateField(_('Start Date'), blank=True, null=True)
+    owner = models.ForeignKey(User, related_name="owner")
+    start_dt = models.DateTimeField(_('Start Date'))
+    end_dt = models.DateTimeField(_('End Date'), blank=True, null=True)
     task_budget = models.IntegerField(blank=True, default=80)
     technology = models.CharField(choices=PROJECT_TECHNOLOGY_CHOICES, max_length=50, default='tendenci')
     status = models.CharField(choices=PROJECT_STATUS_CHOICES, max_length=20, default='unstarted')
@@ -49,11 +49,8 @@ class Project(models.Model):
     def get_absolute_url(self):
         return ('project_detail', [self.pk])
 
-    def owner(self):
-        return self.project_owner
-
     def age(self):
-        today = date.today()
+        today = datetime.now()
         datediff = today - self.start_dt
         if datediff.days > 0:
             return datediff.days
@@ -144,7 +141,7 @@ class Task(models.Model):
     description = models.TextField(blank=True)
     project = models.ForeignKey(Project)
     assignee = models.ForeignKey(User, related_name="assignee")
-    due_dt = models.DateField(_('Due Date'), blank=True, null=True)
+    due_dt = models.DateTimeField(_('Due Date'), blank=True, null=True)
     task_time = models.DecimalField(_("Time"), max_digits=5, decimal_places=2, choices=TASK_TIME_CHOICES, default='0.50')
     status = models.CharField(choices=TASK_STATUS_CHOICES, max_length=20, default='unstarted')
     private = models.BooleanField(default=False)
@@ -168,7 +165,7 @@ class Task(models.Model):
 
     def overdue(self):
         if self.due_dt and self.status != "Done":
-            today = date.today()
+            today = datetime.now()
             datediff = self.due_dt - today
             if datediff.days < 0:
                 return True
@@ -176,7 +173,7 @@ class Task(models.Model):
 
     def due_age(self):
         if self.due_dt:
-            today = date.today()
+            today = datetime.now()
             datediff = self.due_dt - today
             return datediff.days
         return None
@@ -192,8 +189,8 @@ class Task(models.Model):
         return dc
 
 
-MONDAY = date.today() - timedelta(days=date.today().weekday())
-SUNDAY = date.today() + timedelta(days=(6 - date.today().weekday()))
+MONDAY = datetime.now() - timedelta(days=datetime.now().weekday())
+SUNDAY = datetime.now() + timedelta(days=(6 - datetime.now().weekday()))
 
 class UserMethods(User):
     """
@@ -204,7 +201,7 @@ class UserMethods(User):
         return "%s %s" % (self.first_name, self.last_name)
 
     def open_projects(self):
-        projects = Project.objects.filter(version=False, project_owner=self).exclude(status="done").count()
+        projects = Project.objects.filter(version=False, owner=self).exclude(status="done").count()
         return projects
 
     def total_open_tasks(self):

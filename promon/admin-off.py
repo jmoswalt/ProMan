@@ -8,7 +8,7 @@ from promon.forms import TaskForm
 
 class ProjectAdmin(admin.ModelAdmin):
     model = Project
-    list_display = ['name', 'technology', 'project_owner']
+    list_display = ['name', 'technology', 'owner']
     list_filter = ['technology', 'status']
     prepopulated_fields = {'start_dt': ['name']}
     
@@ -16,7 +16,7 @@ class ProjectAdmin(admin.ModelAdmin):
         (None, {'fields': (
             'name',
             'description',
-            'project_owner',
+            'owner',
             'start_dt',
             'end_dt',
             'task_budget',

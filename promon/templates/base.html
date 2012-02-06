@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>{% block title %}{% endblock title %} - ProMon Project Management Tools</title>
+    <title>{% block title %}{% endblock title %} - ProMan Project Management Tools</title>
     <meta name="description" content="">
     <meta name="author" content="">
     
@@ -13,6 +13,7 @@
     
     <!-- Le styles -->
     <link href="{{ STATIC_URL }}css/bootstrap-custom.css" rel="stylesheet">
+    <link href="{{ STATIC_URL }}flick/jquery-ui-1.8.17.custom.css" rel="stylesheet">
     {% block css %}
     <style>
         a.active { color: red; }
@@ -34,6 +35,7 @@
         {% include "footer.html" %}
     </div> <!-- /container -->
     <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-alert.js"></script>
     {% block js %}{% endblock js %}
 </body>
