@@ -27,5 +27,4 @@ urlpatterns = patterns('',
 
     url(r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'admin/login.html'}),
     url(r'^admin/', include(admin.site.urls)),
-    (r'^my_admin/jsi18n', 'django.views.i18n.javascript_catalog'),
 )

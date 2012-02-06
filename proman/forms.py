@@ -26,6 +26,7 @@ class TaskForm(forms.ModelForm):
         super(TaskForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(version=False)
         self.fields['due_dt'].initial = DUE_DT_INITIAL
+        self.fields['due_dt'].widget = widgets.AdminSplitDateTime()
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -44,7 +45,6 @@ class ProjectForm(forms.ModelForm):
         )
 
 class TaskMiniForm(forms.ModelForm):
-    project = forms.CharField(widget=forms.HiddenInput)
     assignee = forms.CharField(widget=forms.HiddenInput)
 
     class Meta:
