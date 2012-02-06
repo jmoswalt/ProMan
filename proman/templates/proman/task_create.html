@@ -2,10 +2,6 @@
 
 {% block title %}Create a new Task{% endblock title %}
 
-{% block css %}
-<link href="{{ STATIC_URL }}ui-lightness/jquery-ui-1.8.17.custom.css" rel="stylesheet">
-{% endblock %}
-
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
@@ -40,6 +36,7 @@
 {% endblock body %}
 
 {% block js %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.17.custom.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function() { 
     $( "#id_due_dt" ).datepicker();
