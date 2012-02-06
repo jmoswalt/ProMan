@@ -305,16 +305,16 @@ class ProjectDetailView(DetailView):
         context = super(ProjectDetailView, self).get_context_data(**kwargs)
 
         context['form'] = form
-        context['project_tasks_stuck'] = Task.objects.filter(version=False, project_id=self.kwargs['pk'], status="stuck").annotate(hours=Sum('task_time')).order_by('due_dt')
+        context['project_tasks_stuck'] = Task.objects.filter(version=False, project=self.kwargs['pk'], status="stuck").annotate(hours=Sum('task_time')).order_by('due_dt')
         context['project_tasks_stuck_hours'] = context['project_tasks_stuck'].aggregate(total=Sum('task_time'))
 
-        context['project_tasks_in_progress'] = Task.objects.filter(version=False, project_id=self.kwargs['pk'], status="in progress").annotate(hours=Sum('task_time')).order_by('due_dt')
+        context['project_tasks_in_progress'] = Task.objects.filter(version=False, project=self.kwargs['pk'], status="in progress").annotate(hours=Sum('task_time')).order_by('due_dt')
         context['project_tasks_in_progress_hours'] = context['project_tasks_in_progress'].aggregate(total=Sum('task_time'))
 
-        context['project_tasks_not_started'] = Task.objects.filter(version=False, project_id=self.kwargs['pk'], status="not started").order_by('due_dt')
+        context['project_tasks_not_started'] = Task.objects.filter(version=False, project=self.kwargs['pk'], status="not started").order_by('due_dt')
         context['project_tasks_not_started_hours'] = context['project_tasks_not_started'].aggregate(total=Sum('task_time'))
 
-        context['project_tasks_done'] = Task.objects.filter(version=False, project_id=self.kwargs['pk'], status="done").order_by('due_dt')
+        context['project_tasks_done'] = Task.objects.filter(version=False, project=self.kwargs['pk'], status="done").order_by('due_dt')
         context['project_tasks_done_hours'] = context['project_tasks_done'].aggregate(total=Sum('task_time'))
         return context
 
