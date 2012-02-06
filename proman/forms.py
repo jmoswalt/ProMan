@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from django import forms
 from django.contrib.admin import widgets
-from promon.models import Task, Project
+from proman.models import Task, Project
 
 DUE_DT_INITIAL = datetime.now() + timedelta(weeks=1)
 

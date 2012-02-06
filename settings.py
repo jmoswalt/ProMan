@@ -1,5 +1,5 @@
 import os
-# Django settings for promon project.
+# Django settings for proman project.
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -136,7 +136,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
-    'promon',
+    'proman',
 )
 
 # A sample logging configuration. The only tangible logging

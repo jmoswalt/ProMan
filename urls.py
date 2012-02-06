@@ -1,6 +1,6 @@
 from django.conf.urls import patterns, include, url
 from django.views.generic import TemplateView
-from promon import views
+from proman import views
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin

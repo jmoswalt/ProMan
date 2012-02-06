@@ -16,8 +16,8 @@ from django.core.urlresolvers import reverse
 from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 
-from promon.models import Project, Task, UserMethods
-from promon.forms import TaskForm, TaskMiniForm, ProjectForm
+from proman.models import Project, Task, UserMethods
+from proman.forms import TaskForm, TaskMiniForm, ProjectForm
 
 START_DT_INITIAL = datetime.now()
 END_DT_INITIAL = datetime.now() + timedelta(days=90)
@@ -27,7 +27,7 @@ class UserListView(ListView):
     model = User
     queryset = UserMethods.objects.filter(is_active=True)
     context_object_name = "users"
-    template_name = "promon/user_list.html"
+    template_name = "proman/user_list.html"
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -36,7 +36,7 @@ class UserListView(ListView):
 class UserDetailView(DetailView):
     model = UserMethods
     context_object_name = "user_object"
-    template_name = "promon/user_detail.html"
+    template_name = "proman/user_detail.html"
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -75,7 +75,7 @@ class TaskCreateView(CreateView):
     Creates a Task
     """
     form_class = TaskForm
-    template_name = "promon/task_create.html"
+    template_name = "proman/task_create.html"
     success_url = '/projects/'
 
     @method_decorator(login_required)
@@ -121,7 +121,7 @@ class TaskUpdateView(UpdateView):
     Updates a Task
     """
     form_class = TaskForm
-    template_name = "promon/task_update.html"
+    template_name = "proman/task_update.html"
     success_url = '/projects/'
 
     @method_decorator(login_required)
@@ -171,7 +171,7 @@ class TaskUpdateView(UpdateView):
 
 class TaskDetailView(DetailView):
     model = Task
-    template_name = "promon/task_detail.html"
+    template_name = "proman/task_detail.html"
     context_object_name = "task"
 
     @method_decorator(login_required)
@@ -189,7 +189,7 @@ class ProjectCreateView(CreateView):
     Creates a Project
     """
     form_class = ProjectForm
-    template_name = "promon/project_create.html"
+    template_name = "proman/project_create.html"
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -231,7 +231,7 @@ class ProjectUpdateView(UpdateView):
     Updates a Project
     """
     form_class = ProjectForm
-    template_name = "promon/project_update.html"
+    template_name = "proman/project_update.html"
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -282,7 +282,7 @@ class ProjectListView(ListView):
 
 class ProjectDetailView(DetailView):
     model = Project
-    template_name = "promon/project_detail.html"
+    template_name = "proman/project_detail.html"
     context_object_name = "project"
 
     @method_decorator(login_required)
