@@ -21,6 +21,7 @@ from proman.forms import TaskForm, TaskMiniForm, ProjectForm
 
 START_DT_INITIAL = datetime.now()
 END_DT_INITIAL = datetime.now() + timedelta(days=90)
+DUE_DT_INITIAL = datetime.now() + timedelta(weeks=1)
 
 
 class UserListView(ListView):
@@ -86,7 +87,7 @@ class TaskCreateView(CreateView):
         super(TaskCreateView, self).get_initial()
         project = self.request.GET.get("project")
         user = self.request.user
-        self.initial = {"assignee":user.id, "project":project}
+        self.initial = {"assignee":user.id, "project":project, "due_dt": DUE_DT_INITIAL}
         return self.initial
     
     def form_valid(self, form):
@@ -243,7 +244,7 @@ class ProjectUpdateView(UpdateView):
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        orig = Task.objects.get(pk=self.object.pk)
+        orig = Project.objects.get(pk=self.object.pk)
         new_obj = orig
         new_obj.pk = None
         new_obj.editor = self.request.user

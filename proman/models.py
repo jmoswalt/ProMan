@@ -140,7 +140,7 @@ class Task(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     project = models.ForeignKey(Project)
-    assignee = models.ForeignKey(User, related_name="assignee")
+    assignee = models.ForeignKey(User, related_name="assignee", verbose_name="Assign to")
     due_dt = models.DateTimeField(_('Due Date'), blank=True, null=True)
     task_time = models.DecimalField(_("Time"), max_digits=5, decimal_places=2, choices=TASK_TIME_CHOICES, default='0.50')
     status = models.CharField(choices=TASK_STATUS_CHOICES, max_length=20, default='unstarted')
