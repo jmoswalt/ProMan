@@ -3,14 +3,25 @@
         <div class="container">
           <a class="brand" href="/">ProMan</a>
           <ul class="nav">
-            <li{% if user_object or users %} class="active"{% endif %}><a href="{% url users %}">People</a></li>
+            {% if request.user.is_authenticated %}
+            <li class="dropdown{% if user_object or users %} active{% endif %}"><a class="dropdown-toggle"
+          data-toggle="dropdown" href="{% url users %}">People <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                    {% for u in ACTIVE_USERS %}
+                    <li><a href="{% url user_detail u.username %}">{{ u.nice_name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </li>
+            {% endif %}
             <li class="dropdown{% if project or projects %} active{% endif %}"><a class="dropdown-toggle"
           data-toggle="dropdown" href="{% url projects %}">Projects <b class="caret"></b></a>
                 <ul class="dropdown-menu">
                     <li><a href="{% url project_create %}">Add a project</a></li>
                 </ul>
             </li>
-            <li{% if task %} class="active"{% endif %}><a href="#Tasks">Tasks</a></li>
+            {% if request.user.is_authenticated %}
+            <li{% if task %} class="active"{% endif %}><a href="{% url user_detail request.user.username %}">Tasks</a></li>
+            {% endif %}
           </ul>
         </div>
       </div>
