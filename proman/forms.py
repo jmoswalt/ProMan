@@ -6,6 +6,8 @@ from proman.models import Task, Project
 DUE_DT_INITIAL = datetime.now() + timedelta(weeks=1)
 
 class TaskForm(forms.ModelForm):
+    due_dt = forms.DateInput(format="n/j/Y")
+
     class Meta:
         model = Task
 
@@ -26,7 +28,6 @@ class TaskForm(forms.ModelForm):
         super(TaskForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(version=False)
         self.fields['due_dt'].initial = DUE_DT_INITIAL
-        self.fields['due_dt'].widget = widgets.AdminDateWidget()
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -46,6 +47,7 @@ class ProjectForm(forms.ModelForm):
 
 class TaskMiniForm(forms.ModelForm):
     assignee = forms.CharField(widget=forms.HiddenInput)
+    due_dt = forms.DateInput(format="n/j/Y")
 
     class Meta:
         model = Task
