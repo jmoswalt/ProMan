@@ -181,7 +181,7 @@ class TaskDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(TaskDetailView, self).get_context_data(**kwargs)
-        context['task_logs'] = LogEntry.objects.filter(object_id=self.object.pk, content_type_id = ContentType.objects.get_for_model(self.object).pk).order_by('-action_time')
+        context['task_logs'] = LogEntry.objects.filter(object_id=self.object.pk, content_type = ContentType.objects.get_for_model(self.object).pk).order_by('-action_time')
         return context
 
 
