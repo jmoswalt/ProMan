@@ -1,30 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Project Monitoring{% endblock title %}
+{% block title %}Project Monitoring, Project Management App{% endblock title %}
 
 {% block body %}
       <!-- Main hero unit for a primary marketing message or call to action -->
       <div class="hero-unit">
         <h1>A refreshing way to Manage.</h1>
         <p>Get all the information you need to keep your business running smoothly.</p>
-        <p><a href="/people/" class="btn success large">Sign up Today &raquo;</a></p>
+        <p>
+        {% if request.user.is_authenticated %}
+        <a href="{% url user_detail request.user.username %}" class="btn success large">My projects &raquo;</a>
+        {% else %}
+        <a href="/accounts/login/?next=/people/" class="btn success large">Login now &raquo;</a>
+        {% endif %}</p>
       </div>
 
       <!-- Example row of columns -->
       <div class="row">
         <div class="span4">
           <h2>Track your People</h2>
-           <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+          <p>See how many projects and tasks your people are managing. Effectively manage work queues without overloading and frustrating your staff.</p>
           <p><a class="btn" href="#">View details &raquo;</a></p>
         </div>
         <div class="span4">
           <h2>Manage Multiple Projects</h2>
-           <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+          <p>Keep tabs on several projects at once. Your personal dashboard shows you the status of everything that is going on.</p>
           <p><a class="btn" href="#">View details &raquo;</a></p>
        </div>
         <div class="span4">
           <h2>See All your Tasks</h2>
-          <p>Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.</p>
+          <p>See everything that you have assigned to you. Task management at it's best with easy to use screens.</p>
           <p><a class="btn" href="#">View details &raquo;</a></p>
         </div>
       </div>

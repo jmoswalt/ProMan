@@ -1,2 +1,2 @@
--e svn+http://code.djangoproject.com/svn/django/trunk/#egg=django_trunk
+Django==1.4
 django-registration

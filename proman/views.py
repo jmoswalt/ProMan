@@ -10,14 +10,17 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.generic import DetailView, ListView, CreateView, UpdateView
 from django.views.generic.edit import FormMixin, ModelFormMixin
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render_to_response
+from django.template import RequestContext
+from django.http import HttpResponseRedirect, HttpResponse
+from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 
 from proman.models import Project, Task, UserMethods
 from proman.forms import TaskForm, TaskMiniForm, ProjectForm
+from proman.utils import get_change_message
 
 START_DT_INITIAL = datetime.now()
 END_DT_INITIAL = datetime.now() + timedelta(days=90)
@@ -64,12 +67,32 @@ class UserDetailView(DetailView):
         
         context['user_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).order_by('status', 'start_dt')
         context['user_open_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).exclude(status="done").aggregate(avg_start_date=Avg('start_dt'), total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
+
+        context['results_paginate'] = "10"
         return context
+
 
     def get_object(self, **kwargs):
         obj = get_object_or_404(UserMethods, username=self.kwargs['username'])
         return obj
 
+
+    def render_to_response(self, context):
+        """Used to pull paginated items via a GET"""
+        if self.request.method == 'GET':
+            if self.request.GET.get('open_task_page'):
+                open_task_page = self.request.GET.get('open_task_page')
+                paginator = Paginator(context['user_open_project_tasks'], context['results_paginate'])
+                task_items = paginator.page(open_task_page).object_list
+                return render_to_response("proman/task_table_items.html", locals(), context_instance=RequestContext(self.request))
+
+            if self.request.GET.get('done_task_page'):
+                done_task_page = self.request.GET.get('done_task_page')
+                paginator = Paginator(context['user_done_project_tasks'], context['results_paginate'])
+                task_items = paginator.page(done_task_page).object_list
+                return render_to_response("proman/task_table_items.html", locals(), context_instance=RequestContext(self.request))
+
+        return render_to_response(self.template_name, context, context_instance=RequestContext(self.request))
 
 class TaskCreateView(CreateView):
     """
@@ -142,11 +165,8 @@ class TaskUpdateView(UpdateView):
         new_obj.version = True
         new_obj.save()
         self.object.save()
-        
-        # TODO:
-        # method passing new_obj and self.object to make a real
-        # change message
-        change_message = "edited this task"
+
+        change_message = get_change_message(orig, self.object)
 
         LogEntry.objects.log_action(
             user_id         = self.request.user.pk, 

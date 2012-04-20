@@ -3,10 +3,19 @@
 
 {% block title %}Task: {{ task.title }}{% endblock title %}
 
+{% block css %}
+{{ block.super }}
+<style>
+    .task-field { font-weight: bold; }
+    .task-change-old, .task-field-private, .task-field-non-billable { color: #a00; }
+    .task-change-new, .task-field-public, .task-field-billable { color: #0a0; font-weight: bold; }
+</style>
+{% endblock css %}
+
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ task.title }} <small>Est: <strong></strong>{{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</strong> &mdash; Due: <strong>{{ task.due_dt|naturaltime }}</strong></small></h1>
+        <h1>{{ task.title }} <small>Est: <strong></strong>{{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</strong> &mdash; {% if task.status == "Done" %}Done{% else %}Due: <strong>{{ task.due_dt|naturaltime }}</strong>{% endif %}</small></h1>
     </div>
     <div class="row">
         {% include "messages.html" %}
@@ -28,7 +37,7 @@
             <h3>Task changelog</h3>
             <ul>
             {% for item in task_logs %}
-                <li>{{ item.user.first_name }} {{ item.change_message }} {{ item.action_time|naturaltime }} </li>
+                <li><a href="{% url user_detail item.user.username %}">{{ item.user.first_name }}</a> {{ item.change_message|safe }} <em>{{ item.action_time|naturaltime }}</em></li>
             {% endfor %}
             </ul>
             </div>
@@ -44,8 +53,8 @@
                 <span class="label important">Non-Billable</span>
             {% endif %}</p>
             <p><a href="{% url task_update task.pk %}" class="btn primary">Edit Task</a> <a href="{% url task_update task.pk %}" class="btn success">Close Task</a></p>
-            <h2>Project info</h2>
-            <p><a href="{% url project_detail task.project.pk %}">{{ task.project.name }}</a><br />
+            <h2>Project Info</h2>
+            <h3><a href="{% url project_detail task.project.pk %}">{{ task.project.name }}</a></h3><p>
             <strong>Owner:</strong> <a href="{% url user_detail task.project.owner.username %}">{{ task.project.owner.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a><br />
             <strong>Technology:</strong> {{ task.project.technology }}<br />
             <strong>{{ task.project.age }}</strong> days old</p>
