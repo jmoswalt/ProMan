@@ -15,6 +15,10 @@
             <li class="dropdown{% if project or projects %} active{% endif %}"><a class="dropdown-toggle"
           data-toggle="dropdown" href="{% url projects %}">Projects <b class="caret"></b></a>
                 <ul class="dropdown-menu">
+                    {% for p in MY_PROJECTS %}
+                    <li><a href="{% url project_detail p.pk %}">{{ p.name }}</a></li>
+                    {% endfor %}
+                    <li class="divider"></li>
                     <li><a href="{% url project_create %}">Add a project</a></li>
                 </ul>
             </li>

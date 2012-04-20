@@ -121,19 +121,22 @@ class TaskCreateView(CreateView):
         self.object.original = self.object
         self.object.save()
 
+        change_message = "added this task"
+
         LogEntry.objects.log_action(
             user_id         = self.request.user.pk, 
             content_type_id = ContentType.objects.get_for_model(self.object).pk,
             object_id       = self.object.pk,
             object_repr     = force_unicode(self.object), 
-            action_flag     = ADDITION
+            action_flag     = ADDITION,
+            change_message  = change_message
         )
 
         return HttpResponseRedirect(self.get_success_url())
     
     def get_success_url(self):
         if self.request.GET.has_key('next'):
-            messages.success(self.request, 'Successfully added the task <strong><a href="#task-%s">%s</a></strong>.' % (self.object.pk, self.object.title), extra_tags='success task-%s' % self.object.pk)
+            messages.success(self.request, 'Successfully added the task <strong><a href="%s">%s</a></strong>.' % (self.object.get_absolute_url(), self.object.title), extra_tags='success task-%s' % self.object.pk)
             return self.request.GET['next']
         
         messages.success(self.request, 'Successfully added the task <strong>%s</strong>.' % self.object.title, extra_tags='success task-%s' % self.object.pk)
