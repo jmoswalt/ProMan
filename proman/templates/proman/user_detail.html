@@ -75,7 +75,7 @@
                     {% include "proman/task_table_items.html" with task_items=user_open_project_tasks|slice:results_paginate %}
                 </tbody>
             </table>
-            {% if user_open_project_tasks|length > 5 %}<a id="more-open-tasks" href="javascript:;">Load More Open Tasks</a>{% endif %}
+            {% if user_open_project_tasks|length|add:0 > results_paginate|add:0 %}<a id="more-open-tasks" href="javascript:;">Load More Open Tasks</a>{% endif %}
         </div>
         <div class="span3">
         <h3>Tasks Summary</h3>
@@ -106,7 +106,7 @@
                 {% include "proman/task_table_items.html" with task_items=user_done_project_tasks|slice:results_paginate %}
                 </tbody>
             </table>
-            {% if user_done_project_tasks|length > 5 %}<a id="more-done-tasks" href="javascript:;">Load More Done Tasks</a>{% endif %}
+            {% if user_done_project_tasks|length|add:0 > results_paginate|add:0 %}<a id="more-done-tasks" href="javascript:;">Load More Done Tasks</a>{% endif %}
         </div>
         
     </div>
