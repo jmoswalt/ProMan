@@ -4,6 +4,7 @@ from datetime import datetime, date, timedelta
 from django.db import models
 from django.db.models import Sum, Count
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -26,7 +27,7 @@ class Project(models.Model):
     """
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    owner = models.ForeignKey(User, related_name="owner")
+    owner = models.ForeignKey(User, related_name="project_owner")
     start_dt = models.DateTimeField(_('Start Date'))
     end_dt = models.DateTimeField(_('End Date'), blank=True, null=True)
     task_budget = models.IntegerField(blank=True, default=80)
@@ -192,26 +193,33 @@ class Task(models.Model):
 MONDAY = datetime.now() - timedelta(days=datetime.now().weekday())
 SUNDAY = datetime.now() + timedelta(days=(6 - datetime.now().weekday()))
 
-class UserMethods(User):
+PROFILE_ROLE_CHOICES = (
+    ('Employee','Employee'),
+    ('Client','Client'),
+)
+
+class Profile(models.Model):
     """
-    Used to create custom methods for users.
+    Profile for users to add more fields.
     """
+    user = models.OneToOneField(User)
+    role = models.CharField(choices=PROFILE_ROLE_CHOICES, max_length=20, default='client') 
 
     def nice_name(self):
-        return "%s %s" % (self.first_name, self.last_name)
+        return "%s %s" % (self.user.first_name, self.user.last_name)
 
     def open_projects(self):
-        projects = Project.objects.filter(version=False, owner=self).exclude(status="done").count()
+        projects = Project.objects.filter(version=False, owner=self.user).exclude(status="done").count()
         return projects
 
     def total_open_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self).exclude(status="done").aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        tasks = Task.objects.filter(version=False, assignee=self.user).exclude(status="done").aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
         return tasks
 
     def velocity_tasks(self):
         today = SUNDAY - timedelta(weeks=1)
         three_weeks_ago = MONDAY - timedelta(weeks=4)
-        tasks = Task.objects.filter(version=False, assignee=self, status="done", due_dt__gte=three_weeks_ago, due_dt__lte=today).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        tasks = Task.objects.filter(version=False, assignee=self.user, status="done", due_dt__gte=three_weeks_ago, due_dt__lte=today).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
         if tasks['total_hours'] > 0:
             tasks['total_hours'] = round(tasks['total_hours']/3,2)
         if tasks['num_tasks'] > 0:
@@ -219,12 +227,15 @@ class UserMethods(User):
         return tasks
 
     def week_due_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self, due_dt__gte=MONDAY, due_dt__lte=SUNDAY).exclude(status="done").aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        tasks = Task.objects.filter(version=False, assignee=self.user, due_dt__gte=MONDAY, due_dt__lte=SUNDAY).exclude(status="done").aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
         return tasks
 
     def week_done_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self, status="done", due_dt__gte=MONDAY, due_dt__lte=SUNDAY).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        tasks = Task.objects.filter(version=False, assignee=self.user, status="done", due_dt__gte=MONDAY, due_dt__lte=SUNDAY).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
         return tasks
 
-    class Meta:
-        proxy=True
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+post_save.connect(create_user_profile, sender=User)

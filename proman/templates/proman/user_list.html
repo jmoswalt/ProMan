@@ -37,7 +37,7 @@
             {% for u in users %}
                 <tr class="project-row">
                     <td>{{ forloop.counter }}</td>
-                    <td><a href="{% url user_detail u.username %}">{{ u.nice_name}}</a></td>
+                    <td><a href="{% url user_detail u.user.username %}">{{ u.nice_name}}</a></td>
                     <td>{{ u.open_projects }}</td>
                     <td>{{ u.total_open_tasks.num_tasks }}</td>
                     <td>{{ u.week_due_tasks.num_tasks }}</td>

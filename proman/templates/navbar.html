@@ -10,7 +10,7 @@
                     <li><a href="{% url user_detail request.user.username %}">My Dashboard</a></li>
                     <li class="divider"></li>
                     {% for u in ACTIVE_USERS %}
-                    <li><a href="{% url user_detail u.username %}">{{ u.nice_name }}</a></li>
+                    <li><a href="{% url user_detail u.user.username %}">{{ u.nice_name }}</a></li>
                     {% endfor %}
                 </ul>
             </li>

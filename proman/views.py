@@ -18,7 +18,7 @@ from django.core.urlresolvers import reverse
 from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 
-from proman.models import Project, Task, UserMethods
+from proman.models import Project, Task, Profile
 from proman.forms import TaskForm, TaskMiniForm, TaskCloseForm, ProjectForm
 from proman.utils import get_task_change_message
 
@@ -29,7 +29,7 @@ DUE_DT_INITIAL = datetime.now() + timedelta(weeks=1)
 
 class UserListView(ListView):
     model = User
-    queryset = UserMethods.objects.filter(is_active=True)
+    queryset = Profile.objects.filter(user__is_active=True)
     context_object_name = "users"
     template_name = "proman/user_list.html"
 
@@ -38,7 +38,7 @@ class UserListView(ListView):
         return super(UserListView, self).dispatch(*args, **kwargs)
 
 class UserDetailView(DetailView):
-    model = UserMethods
+    model = Profile
     context_object_name = "user_object"
     template_name = "proman/user_detail.html"
 
@@ -73,7 +73,7 @@ class UserDetailView(DetailView):
         return context
 
     def get_object(self, **kwargs):
-        obj = get_object_or_404(UserMethods, username=self.kwargs['username'])
+        obj = get_object_or_404(Profile, user__username=self.kwargs['username'])
         return obj
 
     def render_to_response(self, context):
