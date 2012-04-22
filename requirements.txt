@@ -1,2 +1,4 @@
 Django==1.4
 django-registration
+
+git+git://github.com/lann/Harvest@new_version#egg=harvest
