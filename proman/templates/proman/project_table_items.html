@@ -1,0 +1,13 @@
+            {% for project in projects %}
+                <tr class="project-row">
+                    <td>{{ project.pk }}</td>
+                    <td><a href="{% url project_detail project.pk %}">{{ project.name }}</a></td>
+                    <td><a href="{% url user_detail project.owner.username %}">{{ project.owner.first_name }} {{ project.owner.last_name|slice:":1" }}.</a></td>
+                    <td>{{ project.technology }}</td>
+                    <td>{{ project.status }}</td>
+                    <td>{{ project.age }}</td>
+                    <td>{{ project.task_count }}</td>
+                    <td>{{ project.task_hours }}</td>
+                    <td>{{ project.completion_perc }} %</td>
+                </tr>
+            {% endfor %}

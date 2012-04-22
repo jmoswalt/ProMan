@@ -19,8 +19,8 @@ from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 
 from proman.models import Project, Task, UserMethods
-from proman.forms import TaskForm, TaskMiniForm, ProjectForm
-from proman.utils import get_change_message
+from proman.forms import TaskForm, TaskMiniForm, TaskCloseForm, ProjectForm
+from proman.utils import get_task_change_message
 
 START_DT_INITIAL = datetime.now()
 END_DT_INITIAL = datetime.now() + timedelta(days=90)
@@ -66,16 +66,15 @@ class UserDetailView(DetailView):
         context['project_tasks_done_hours'] = context['project_tasks_done'].aggregate(total=Sum('task_time'))
         
         context['user_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).order_by('status', 'start_dt')
-        context['user_open_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).exclude(status="done").aggregate(avg_start_date=Avg('start_dt'), total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
+        context['user_open_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).exclude(status="done")
+        context['user_open_project_stats'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).exclude(status="done").aggregate(total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
 
         context['results_paginate'] = "10"
         return context
 
-
     def get_object(self, **kwargs):
         obj = get_object_or_404(UserMethods, username=self.kwargs['username'])
         return obj
-
 
     def render_to_response(self, context):
         """Used to pull paginated items via a GET"""
@@ -90,6 +89,16 @@ class UserDetailView(DetailView):
                 done_task_page = self.request.GET.get('done_task_page')
                 paginator = Paginator(context['user_done_project_tasks'], context['results_paginate'])
                 task_items = paginator.page(done_task_page).object_list
+                return render_to_response("proman/task_table_items.html", locals(), context_instance=RequestContext(self.request))
+
+            if self.request.GET.get('done_task_search'):
+                done_task_count = self.request.GET.get('done_task_search')
+                task_items = context['user_done_project_tasks'][done_task_count:]
+                return render_to_response("proman/task_table_items.html", locals(), context_instance=RequestContext(self.request))
+
+            if self.request.GET.get('open_task_search'):
+                open_task_count = self.request.GET.get('open_task_search')
+                task_items = context['user_open_project_tasks'][open_task_count:]
                 return render_to_response("proman/task_table_items.html", locals(), context_instance=RequestContext(self.request))
 
         return render_to_response(self.template_name, context, context_instance=RequestContext(self.request))
@@ -169,7 +178,7 @@ class TaskUpdateView(UpdateView):
         new_obj.save()
         self.object.save()
 
-        change_message = get_change_message(orig, self.object)
+        change_message = get_task_change_message(orig, self.object)
 
         LogEntry.objects.log_action(
             user_id         = self.request.user.pk, 
@@ -193,6 +202,20 @@ class TaskUpdateView(UpdateView):
         messages.success(self.request, 'Successfully updated this task.', extra_tags='success task-%s' % self.object.pk)
         return self.object.get_absolute_url()
 
+class TaskCloseUpdateView(TaskUpdateView):
+    """
+    Mini Form to Close a Task
+    """
+    form_class = TaskCloseForm
+
+    def get_success_url(self):
+        if self.request.GET.has_key('next'):
+            messages.success(self.request, 'Successfully closed the task <strong><a href="%s">%s</a></strong>.' % (self.object.get_absolute_url(), self.object.title), extra_tags='success task-%s' % self.object.pk)
+            return self.request.GET['next']
+        
+        messages.success(self.request, 'Successfully closed this task.', extra_tags='success task-%s' % self.object.pk)
+        return self.object.get_absolute_url()
+
 class TaskDetailView(DetailView):
     model = Task
     template_name = "proman/task_detail.html"
@@ -203,7 +226,12 @@ class TaskDetailView(DetailView):
         return super(TaskDetailView, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
+        task = self.object
+        task.status = "Done"
+        form = TaskCloseForm(instance=task)
+
         context = super(TaskDetailView, self).get_context_data(**kwargs)
+        context['close_form'] = form
         context['task_logs'] = LogEntry.objects.filter(object_id=self.object.pk, content_type = ContentType.objects.get_for_model(self.object).pk).order_by('-action_time')
         return context
 
@@ -298,11 +326,35 @@ class ProjectListView(ListView):
     model = Project
     queryset = Project.objects.filter(version=False)
     context_object_name = "projects"
+    template_name = "proman/project_list.html"
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(ProjectListView, self).dispatch(*args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super(ProjectListView, self).get_context_data(**kwargs)
+        context['projects'] = Project.objects.filter(version=False).order_by('-status', 'start_dt')
+        context['results_paginate'] = "3"
+        return context
+
+    def render_to_response(self, context):
+        """Used to pull paginated items via a GET"""
+        if self.request.method == 'GET':
+            if self.request.GET.get('project_page'):
+                project_page = self.request.GET.get('project_page')
+                print project_page
+                paginator = Paginator(context['projects'], context['results_paginate'])
+                projects = paginator.page(project_page).object_list
+                return render_to_response("proman/project_table_items.html", locals(), context_instance=RequestContext(self.request))
+
+            if self.request.GET.get('project_search'):
+                project_count = self.request.GET.get('project_search')
+                projects = context['projects'][project_count:]
+                print projects
+                return render_to_response("proman/project_table_items.html", locals(), context_instance=RequestContext(self.request))
+
+        return render_to_response(self.template_name, context, context_instance=RequestContext(self.request))
 
 class ProjectDetailView(DetailView):
     model = Project
@@ -340,5 +392,6 @@ class ProjectDetailView(DetailView):
 
         context['project_tasks_done'] = Task.objects.filter(version=False, project=self.kwargs['pk'], status="done").order_by('due_dt')
         context['project_tasks_done_hours'] = context['project_tasks_done'].aggregate(total=Sum('task_time'))
+
         return context
 

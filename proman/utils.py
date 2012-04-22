@@ -1,6 +1,6 @@
 from time import strftime
 
-def get_change_message(old=None, new=None):
+def get_task_change_message(old=None, new=None):
     if old and new:
         output = ""
         if old.title != new.title:

@@ -52,7 +52,8 @@
             {% else %}
                 <span class="label important">Non-Billable</span>
             {% endif %}</p>
-            <p><a href="{% url task_update task.pk %}" class="btn primary">Edit Task</a> <a href="{% url task_update task.pk %}" class="btn success">Close Task</a></p>
+            <p><a href="{% url task_update task.pk %}" class="btn primary">Edit Task</a>
+            <a href="#close-form-modal" data-toggle="modal" class="btn success">Close Task</a></p>
             <h2>Project Info</h2>
             <h3><a href="{% url project_detail task.project.pk %}">{{ task.project.name }}</a></h3><p>
             <strong>Owner:</strong> <a href="{% url user_detail task.project.owner.username %}">{{ task.project.owner.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a><br />
@@ -61,4 +62,40 @@
         </div>
     </div>
 </div>
+<div class="modal hide fade" id="close-form-modal">
+    <div class="modal-header">
+        <a class="close" data-dismiss="modal">×</a>
+        <h3>Close Task - {{ task.title }}</h3>
+    </div>
+    <form method="post" action="{% url task_close task.pk %}?next={% url project_detail task.project.pk %}" class="form-inline">{% csrf_token %}
+        <div class="modal-body">
+            {% for hidden in close_form.hidden_fields %}{{ hidden }}{% endfor %}
+            {% for field in close_form.visible_fields %}
+                <div class="control-group">
+                <label class="control-label" for="{{ field.label }}">{{ field.label }}</label>
+                <div class="controls">
+                    {{ field }}
+                    <p class="help-block">{{ field.errors }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="modal-footer">
+            <button type="reset" class="btn cancel">Cancel</button>
+            <button type="submit" class="btn success">Close Task</button>
+        </div>
+    </form>
+</div>
 {% endblock body %}
+
+{% block js %}
+<script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-modal.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    $('#close-form-modal').modal('hide');
+    $('#close-form-modal button.cancel').click(function(){
+        $('#close-form-modal').modal('hide');
+    });
+});
+</script>
+{% endblock js %}

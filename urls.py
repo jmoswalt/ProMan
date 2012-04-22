@@ -23,6 +23,7 @@ urlpatterns = patterns('',
     # Tasks
     url(r'^tasks/add/$', views.TaskCreateView.as_view(), name='task_create'),
     url(r'^tasks/edit/(?P<pk>\d+)/$', views.TaskUpdateView.as_view(), name='task_update'),
+    url(r'^tasks/close/(?P<pk>\d+)/$', views.TaskCloseUpdateView.as_view(), name='task_close'),
     url(r'^tasks/(?P<pk>\d+)/$', views.TaskDetailView.as_view(), name='task_detail'),
 
     url(r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'admin/login.html'}),

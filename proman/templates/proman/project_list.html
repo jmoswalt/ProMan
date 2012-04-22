@@ -5,7 +5,7 @@
 {% block body %}
 <div class="content project project-list">
     <div class="page-header">
-        <h1>Project List <small>{{ projects|length }} total - <a href="{% url project_create %}?next={{ request.path }}" class="colorize success">add new</a></small></small></h1>
+        <h1>Project List <small>(<span id="projects-shown"></span> of {{ projects|length  }}) | <a href="{% url project_create %}?next={{ request.path }}" class="colorize success">add new</a></small></small></h1>
     </div>
     <div class="row">
         {% include "messages.html" %}
@@ -21,27 +21,18 @@
                     <th class="blue">Name</th>
                     <th class="blue">Owner</th>
                     <th class="blue">Tech</th>
-                    <th class="blue">Age</th>
+                    <th class="blue">Status</th>
+                    <th class="blue">Age (days)</th>
                     <th class="blue">Tasks</th>
                     <th class="blue">Hours</th>
                     <th class="blue">% Done</th>
                 </tr>
                 </thead>
                 <tbody>
-            {% for project in projects %}
-                <tr class="project-row">
-                    <td>{{ forloop.counter }}</td>
-                    <td><a href="{% url project_detail project.pk %}">{{ project.name }}</a></td>
-                    <td><a href="{% url user_detail project.owner.username %}">{{ project.owner.first_name }} {{ project.owner.last_name|slice:":1" }}.</a></td>
-                    <td>{{ project.technology }}</td>
-                    <td>{{ project.age }} days</td>
-                    <td>{{ project.task_count }}</td>
-                    <td>{{ project.task_hours }}</td>
-                    <td>{{ project.completion_perc }} %</td>
-                </tr>
-            {% endfor %}
+                    {% include "proman/project_table_items.html" with projects=projects|slice:results_paginate %}
                 </tbody>
             </table>
+        {% if projects|length|add:0 > results_paginate|add:0 %}<a id="more-projects" href="javascript:;">Show More Projects</a>{% endif %}
         </div>
     </div>
 </div>
@@ -51,20 +42,51 @@
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.tablesorter.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function() { 
-    $("#project-list").tablesorter({sortList: [[4,1]]});
+    $("#project-list").tablesorter({sortList: [[5,1]]});
 
     $('tr.project-row').show();
+
+    $('form#live-filter').on('focus', '#project-search', function(e) {
+        var tmpVAL = $('#project-search').val().toLowerCase();
+        var loadedCount = $('#projects-shown').text();
+        if (tmpVAL.length == 0 && loadedCount <= {{ projects|length }}) {
+            // load all projects, update numbers
+            $.get("?project_search={{ results_paginate }}", function(html) { 
+              $("#project-list tbody").append(html);
+              var totalDone = $("#project-list tbody tr:visible").size();
+              $("#projects-shown").text(totalDone);
+            });
+            $("#more-projects").hide();
+        }
+
+    });
     $('form#live-filter').on('keyup', '#project-search', function(e) {
         var tmpVAL = $('#project-search').val().toLowerCase();
         $('.project-row').each(function() {
           var tmpHTML = $(this).html().toLowerCase();
           if (tmpHTML.indexOf(tmpVAL) >= 0) {
-            $(this).fadeIn(150);
+            $(this).show();
           } else if (tmpVAL.length < 1) {
-            $(this).fadeIn(150);
+            $(this).show();
           } else {
-            $(this).fadeOut(150);
+            $(this).hide();
           }
+        });
+        var totalDone = $("#project-list tbody tr:visible").size();
+        $("#projects-shown").text(totalDone);
+    });
+
+    $("#projects-shown").text($("#project-list tbody tr").size());
+
+    var projectInc = 1;
+    $("#more-projects").click(function(){
+        projectInc++;
+        $.get("?project_page="+projectInc, function(html) { 
+            $("#project-list tbody").append(html);
+            $("#project-list").trigger("update");
+            var totalDone = $("#project-list tbody tr").size();
+            if (totalDone < (projectInc*{{ results_paginate }})) {$("#more-projects").hide();}
+            $("#projects-shown").text(totalDone);
         });
     });
 });
