@@ -6,9 +6,9 @@
 {% block css %}
 {{ block.super }}
 <style>
-    .task-field { font-weight: bold; }
-    .task-change-old, .task-field-private, .task-field-non-billable { color: #a00; }
-    .task-change-new, .task-field-public, .task-field-billable { color: #0a0; font-weight: bold; }
+    .log-field { font-weight: bold; }
+    .log-change-old, .log-field-private, .log-field-non-billable { color: #a00; }
+    .log-change-new, .log-field-public, .log-field-billable { color: #0a0; font-weight: bold; }
 </style>
 {% endblock css %}
 
@@ -33,13 +33,9 @@
                 <p>{{ task.resolution }}</p>
             </div>
             {% endif %}
-            <div id="task-logs">
+            <div id="change-logs">
             <h3>Task changelog</h3>
-            <ul>
-            {% for item in task_logs %}
-                <li><a href="{% url user_detail item.user.username %}">{{ item.user.first_name }}</a> {{ item.change_message|safe }} <em>{{ item.action_time|naturaltime }}</em></li>
-            {% endfor %}
-            </ul>
+            {% include "proman/log_items.html" with logs=task_logs %}
             </div>
         </div>
         <div class="span4">

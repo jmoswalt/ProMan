@@ -2,6 +2,15 @@
 
 {% block title %}Project: {{ project.name }}{% endblock title %}
 
+{% block css %}
+{{ block.super }}
+<style>
+    .log-field { font-weight: bold; }
+    .log-change-old, .log-field-private, .log-field-non-billable { color: #a00; }
+    .log-change-new, .log-field-public, .log-field-billable { color: #0a0; font-weight: bold; }
+</style>
+{% endblock css %}
+
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
@@ -13,6 +22,7 @@
             <div class="span8">
                 <h4>About the project:</h4>
                 <p>{{ project.description|safe|linebreaks }}</p>
+                <p>{{ project.harvest_notes }}</p>
             </div>
             <div class="span3 offset1">
                 <p><strong>Owner:</strong> <a href="{% url user_detail project.owner.username %}">{{ project.owner.first_name }} {{ project.owner.last_name }}</a><br />
@@ -61,10 +71,10 @@
                 <tbody>
             {% for task in project_tasks_stuck %}
                 <tr id="task-{{ task.pk }}">
-                    <td>{{ forloop.counter }}</td>
+                    <td>{{ task.pk }}</td>
                     <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a></td>
                     <td><a href="{% url user_detail task.assignee.username %}">{{ task.assignee.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a></td>
-                    <td class="colorize {{ task.due_class }}">{{ task.due_dt|date:"D, n/j" }}</td>
+                    <td class="colorize {{ task.due_class }}">{{ task.due_dt|date:"m/d, D" }}</td>
                     <td>{{ task.task_time }}</td>
                     <td><a href="{% url task_update task.pk %}?next={{ request.path }}" class="label info">Edit</a></td>
                 </tr>
@@ -89,10 +99,10 @@
                 <tbody>
             {% for task in project_tasks_in_progress %}
                 <tr id="task-{{ task.pk }}">
-                    <td>{{ forloop.counter }}</td>
+                    <td>{{ task.pk }}</td>
                     <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a></td>
                     <td><a href="{% url user_detail task.assignee.username %}">{{ task.assignee.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a></td>
-                    <td class="colorize {{ task.due_class }}">{{ task.due_dt|date:"D, n/j" }}</td>
+                    <td class="colorize {{ task.due_class }}">{{ task.due_dt|date:"m/d, D" }}</td>
                     <td>{{ task.task_time }}</td>
                     <td><a href="{% url task_update task.pk %}?next={{ request.path }}" class="label info">Edit</a></td>
                 </tr>
@@ -117,10 +127,10 @@
                 <tbody>
             {% for task in project_tasks_not_started %}
                 <tr id="task-{{ task.pk }}">
-                    <td>{{ forloop.counter }}</td>
+                    <td>{{ task.pk }}</td>
                     <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a></td>
                     <td><a href="{% url user_detail task.assignee.username %}">{{ task.assignee.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a></td>
-                    <td class="colorize {{ task.due_class }}">{{ task.due_dt|date:"D, n/j" }}</td>
+                    <td class="colorize {{ task.due_class }}">{{ task.due_dt|date:"m/d, D" }}</td>
                     <td>{{ task.task_time }}</td>
                     <td><a href="{% url task_update task.pk %}?next={{ request.path }}" class="label info">Edit</a></td>
                 </tr>
@@ -148,7 +158,7 @@
                     <td>{{ forloop.counter }}</td>
                     <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a></td>
                     <td><a href="{% url user_detail task.assignee.username %}">{{ task.assignee.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a></td>
-                    <td>{{ task.due_dt|date:"D, n/j" }}</td>
+                    <td>{{ task.due_dt|date:"m/d, D" }}</td>
                     <td>{{ task.task_time }}</td>
                     <td><a href="{% url task_update task.pk %}?next={{ request.path }}" class="label info">Edit</a></td>
                 </tr>
@@ -156,6 +166,10 @@
                 </tbody>
             </table>
         {% endif %}
+            <div id="change-logs">
+                <h3>Project changelog</h3>
+                {% include "proman/log_items.html" with logs=project_logs %}
+            </div>
         </div>
         
         <div class="span3 offset1">

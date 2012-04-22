@@ -11,7 +11,8 @@ urlpatterns = patterns('',
     url(r'^$', TemplateView.as_view(template_name="home.html"), name='home'),
 
     # People
-    url(r'^people/(?P<username>\w+)/$', views.UserDetailView.as_view(), name='user_detail'),
+    url(r'^people/id/(?P<pk>\d+)/$', views.UserIdRedirect, name='user_detail_pk'),
+    url(r'^people/(?P<username>[\w\@\.]+)/$', views.UserDetailView.as_view(), name='user_detail'),
     url(r'^people/$', views.UserListView.as_view(), name='users'),
 
     # Projects

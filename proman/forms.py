@@ -124,3 +124,9 @@ class TaskCloseForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(TaskCloseForm, self).__init__(*args, **kwargs)
+
+    def clean_status(self):
+        status = self.cleaned_data.get('status')
+        if status:
+            return "Done"
+        return status

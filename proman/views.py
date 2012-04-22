@@ -20,12 +20,16 @@ from django.core.mail import send_mail
 
 from proman.models import Project, Task, Profile
 from proman.forms import TaskForm, TaskMiniForm, TaskCloseForm, ProjectForm
-from proman.utils import get_task_change_message
+from proman.utils import get_task_change_message, get_project_change_message
 
 START_DT_INITIAL = datetime.now()
 END_DT_INITIAL = datetime.now() + timedelta(days=90)
 DUE_DT_INITIAL = datetime.now() + timedelta(weeks=1)
 
+
+def UserIdRedirect(request, pk=None):
+    user = get_object_or_404(User, pk=pk)
+    return HttpResponseRedirect(reverse('user_detail', args=[user.username]))
 
 class UserListView(ListView):
     model = User
@@ -226,9 +230,7 @@ class TaskDetailView(DetailView):
         return super(TaskDetailView, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        task = self.object
-        task.status = "Done"
-        form = TaskCloseForm(instance=task)
+        form = TaskCloseForm(instance=self.object)
 
         context = super(TaskDetailView, self).get_context_data(**kwargs)
         context['close_form'] = form
@@ -261,12 +263,15 @@ class ProjectCreateView(CreateView):
         self.object.original = self.object
         self.object.save()
 
+        change_message = "added this project"
+
         LogEntry.objects.log_action(
             user_id         = self.request.user.pk, 
             content_type_id = ContentType.objects.get_for_model(self.object).pk,
             object_id       = self.object.pk,
             object_repr     = force_unicode(self.object), 
-            action_flag     = ADDITION
+            action_flag     = ADDITION,
+            change_message  = change_message
         )
 
         messages.success(self.request, "Successfully added this new project, <strong>%s</strong>." % self.object.name, extra_tags='success')
@@ -303,12 +308,15 @@ class ProjectUpdateView(UpdateView):
         new_obj.save()
         self.object.save()
 
+        change_message = get_project_change_message(orig, self.object)
+
         LogEntry.objects.log_action(
             user_id         = self.request.user.pk, 
             content_type_id = ContentType.objects.get_for_model(self.object).pk,
             object_id       = self.object.pk,
             object_repr     = force_unicode(self.object), 
-            action_flag     = CHANGE
+            action_flag     = CHANGE,
+            change_message  = change_message
         )
 
         return HttpResponseRedirect(self.get_success_url())
@@ -392,6 +400,8 @@ class ProjectDetailView(DetailView):
 
         context['project_tasks_done'] = Task.objects.filter(version=False, project=self.kwargs['pk'], status="done").order_by('due_dt')
         context['project_tasks_done_hours'] = context['project_tasks_done'].aggregate(total=Sum('task_time'))
+        
+        context['project_logs'] = LogEntry.objects.filter(object_id=self.object.pk, content_type = ContentType.objects.get_for_model(self.object).pk).order_by('-action_time')
 
         return context
 

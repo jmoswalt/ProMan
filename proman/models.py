@@ -7,7 +7,6 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.utils.translation import ugettext_lazy as _
 
-
 PROJECT_TECHNOLOGY_CHOICES = (
     ('Tendenci','Tendenci'),
     ('WordPress','WordPress'),
@@ -34,6 +33,7 @@ class Project(models.Model):
     technology = models.CharField(choices=PROJECT_TECHNOLOGY_CHOICES, max_length=50, default='tendenci')
     status = models.CharField(choices=PROJECT_STATUS_CHOICES, max_length=20, default='unstarted')
     ongoing = models.BooleanField(default=False)
+    harvest = models.IntegerField(blank=True, default=0)
 
     # Versioning Info
     original_creator = models.ForeignKey(User, related_name="project_original_owner")
