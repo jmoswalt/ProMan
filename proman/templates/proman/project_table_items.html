@@ -2,7 +2,7 @@
                 <tr class="project-row">
                     <td>{{ project.pk }}</td>
                     <td><a href="{% url project_detail project.pk %}">{{ project.name }}</a></td>
-                    <td><a href="{% url user_detail project.owner.username %}">{{ project.owner.first_name }} {{ project.owner.last_name|slice:":1" }}.</a></td>
+                    <td><a href="{% url user_detail project.owner.username %}">{{ project.owner.profile.abbr_name }}</a></td>
                     <td>{{ project.technology }}</td>
                     <td>{{ project.status }}</td>
                     <td>{{ project.age }}</td>

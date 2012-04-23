@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 from django import forms
 from django.contrib.admin import widgets
+from django.utils import timezone
 from proman.models import Task, Project
 
-DUE_DT_INITIAL = datetime.now() + timedelta(weeks=1)
+DUE_DT_INITIAL = timezone.now() + timedelta(weeks=1)
 
 class TaskForm(forms.ModelForm):
     due_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'))
@@ -29,6 +30,7 @@ class TaskForm(forms.ModelForm):
         if due_dt:
             try:
                 due_dt = datetime.strptime(due_dt, '%m/%d/%Y')
+                due_dt = timezone.make_aware(due_dt, timezone.utc)
             except ValueError:
                 due_dt = None
                 self._errors['due_dt'] = ['Invalid date selected.']
@@ -62,6 +64,7 @@ class ProjectForm(forms.ModelForm):
         if start_dt:
             try:
                 start_dt = datetime.strptime(start_dt, '%m/%d/%Y')
+                start_dt = timezone.make_aware(start_dt, timezone.utc)
             except ValueError:
                 start_dt = None
                 self._errors['start_dt'] = ['Invalid date selected.']
@@ -72,6 +75,7 @@ class ProjectForm(forms.ModelForm):
         if end_dt:
             try:
                 end_dt = datetime.strptime(end_dt, '%m/%d/%Y')
+                end_dt = timezone.make_aware(end_dt, timezone.utc)
             except ValueError:
                 end_dt = None
                 self._errors['end_dt'] = ['Invalid date selected.']
@@ -100,6 +104,7 @@ class TaskMiniForm(forms.ModelForm):
         if due_dt:
             try:
                 due_dt = datetime.strptime(due_dt, '%m/%d/%Y')
+                due_dt = timezone.make_aware(due_dt, timezone.utc)
             except ValueError:
                 due_dt = None
                 self._errors['due_dt'] = ['Invalid date selected.']

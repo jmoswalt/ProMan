@@ -4,6 +4,7 @@ from datetime import datetime, date, timedelta
 from django.db import models
 from django.db.models import Sum, Count
 from django.contrib.auth.models import User
+from django.utils import timezone
 from django.db.models.signals import post_save
 from django.utils.translation import ugettext_lazy as _
 
@@ -20,6 +21,11 @@ PROJECT_STATUS_CHOICES = (
     ('Done','Done'),
 )
 
+class Client(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    harvest_client_id = models.IntegerField(blank=True, default=0)
+
 class Project(models.Model):
     """
     A project is a collection of tasks with a start and end date
@@ -33,14 +39,15 @@ class Project(models.Model):
     technology = models.CharField(choices=PROJECT_TECHNOLOGY_CHOICES, max_length=50, default='tendenci')
     status = models.CharField(choices=PROJECT_STATUS_CHOICES, max_length=20, default='unstarted')
     ongoing = models.BooleanField(default=False)
-    harvest = models.IntegerField(blank=True, default=0)
+    harvest_project_id = models.IntegerField(blank=True, default=0)
+    client = models.ForeignKey(Client, null=True, related_name="project_client")
 
     # Versioning Info
     original_creator = models.ForeignKey(User, related_name="project_original_owner")
     editor = models.ForeignKey(User, related_name="project_editor")
     create_dt = models.DateTimeField(auto_now_add=True)
     update_dt = models.DateTimeField(auto_now=True)
-    original = models.ForeignKey('self', null=True, related_name='task_original')
+    original = models.ForeignKey('self', null=True, related_name='project_original')
     version = models.BooleanField(default=False)
 
     def __unicode__(self):
@@ -51,7 +58,7 @@ class Project(models.Model):
         return ('project_detail', [self.pk])
 
     def age(self):
-        today = datetime.now()
+        today = timezone.now()
         datediff = today - self.start_dt
         if datediff.days > 0:
             return datediff.days
@@ -166,7 +173,7 @@ class Task(models.Model):
 
     def overdue(self):
         if self.due_dt and self.status != "Done":
-            today = datetime.now()
+            today = timezone.now()
             datediff = self.due_dt - today
             if datediff.days < 0:
                 return True
@@ -174,7 +181,7 @@ class Task(models.Model):
 
     def due_age(self):
         if self.due_dt:
-            today = datetime.now()
+            today = timezone.now()
             datediff = self.due_dt - today
             return datediff.days
         return None
@@ -206,7 +213,14 @@ class Profile(models.Model):
     role = models.CharField(choices=PROFILE_ROLE_CHOICES, max_length=20, default='client') 
 
     def nice_name(self):
-        return "%s %s" % (self.user.first_name, self.user.last_name)
+        if self.user.first_name or self.user.last_name:
+            return "%s %s" % (self.user.first_name, self.user.last_name)
+        return self.user.username
+
+    def abbr_name(self):
+        if self.user.first_name or self.user.last_name:
+            return "%s %s." % (self.user.first_name, self.user.last_name[:1])
+        return self.user.username
 
     def open_projects(self):
         projects = Project.objects.filter(version=False, owner=self.user).exclude(status="done").count()

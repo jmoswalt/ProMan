@@ -257,11 +257,6 @@ class ProjectCreateView(CreateView):
     
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.original_creator = self.request.user
-        self.object.editor = self.request.user
-        self.object.save()
-        self.object.original = self.object
-        self.object.save()
 
         change_message = "added this project"
 
@@ -343,7 +338,7 @@ class ProjectListView(ListView):
     def get_context_data(self, **kwargs):
         context = super(ProjectListView, self).get_context_data(**kwargs)
         context['projects'] = Project.objects.filter(version=False).order_by('-status', 'start_dt')
-        context['results_paginate'] = "3"
+        context['results_paginate'] = "25"
         return context
 
     def render_to_response(self, context):
@@ -351,7 +346,6 @@ class ProjectListView(ListView):
         if self.request.method == 'GET':
             if self.request.GET.get('project_page'):
                 project_page = self.request.GET.get('project_page')
-                print project_page
                 paginator = Paginator(context['projects'], context['results_paginate'])
                 projects = paginator.page(project_page).object_list
                 return render_to_response("proman/project_table_items.html", locals(), context_instance=RequestContext(self.request))
@@ -359,7 +353,6 @@ class ProjectListView(ListView):
             if self.request.GET.get('project_search'):
                 project_count = self.request.GET.get('project_search')
                 projects = context['projects'][project_count:]
-                print projects
                 return render_to_response("proman/project_table_items.html", locals(), context_instance=RequestContext(self.request))
 
         return render_to_response(self.template_name, context, context_instance=RequestContext(self.request))

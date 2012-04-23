@@ -23,7 +23,7 @@
             {% if task.overdue %}
             <div class="alert alert-error">
                 <a class="close">×</a>
-                <p><strong>Overdue!!!</strong> This task was due {{ task.due_dt|naturaltime }}. Please do it or update it and tell {{ task.original_creator.first_name }} {{ task.original_creator.last_name|slice:":1" }}.</p>
+                <p><strong>Overdue!!!</strong> This task was due {{ task.due_dt|naturaltime }}. Please do it or update it and tell {{ task.original_creator.profile.abbr_name }}</p>
             </div>
             {% endif %}
             <div>{{ task.description|safe|linebreaks }}</div>
@@ -39,7 +39,7 @@
             </div>
         </div>
         <div class="span4">
-            <p><strong>Assigned to:</strong> <a href="{% url user_detail task.assignee.username %}">{{ task.assignee.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a><br />
+            <p><strong>Assigned to:</strong> <a href="{% url user_detail task.assignee.username %}">{{ task.assignee.profile.abbr_name }}</a><br />
             <strong>Due Date:</strong> <span class="colorize{% if task.status != "Done" %} {{ task.due_class }}{% endif %}">{{ task.due_dt|date:"l, n/j" }}</span><br />
             <strong>Status:</strong> {{ task.status }}<br />
             
@@ -52,7 +52,7 @@
             <a href="#close-form-modal" data-toggle="modal" class="btn success">Close Task</a></p>
             <h2>Project Info</h2>
             <h3><a href="{% url project_detail task.project.pk %}">{{ task.project.name }}</a></h3><p>
-            <strong>Owner:</strong> <a href="{% url user_detail task.project.owner.username %}">{{ task.project.owner.first_name }} {{ task.assignee.last_name|slice:":1" }}.</a><br />
+            <strong>Owner:</strong> <a href="{% url user_detail task.project.owner.username %}">{{ task.project.owner.profile.abbr_name }}</a><br />
             <strong>Technology:</strong> {{ task.project.technology }}<br />
             <strong>{{ task.project.age }}</strong> days old</p>
         </div>

@@ -1,6 +1,6 @@
 import datetime
 from django import template
-from django.utils import simplejson as json
+from django.utils import timezone, simplejson as json
 from django.contrib.auth.models import User
 
 register = template.Library()
@@ -11,8 +11,10 @@ def avg_start_date(projects):
     days = []
     for p in projects:
         days.append(p.age())
-    average = sum(days)/len(days)
-    today = datetime.datetime.now()
+    average = 0
+    if len(days) > 0:
+        average = sum(days)/len(days)
+    today = timezone.now()
     delta = datetime.timedelta(days=average)
     return today - delta
 
@@ -33,6 +35,14 @@ def user_object(pk):
     return user
 
 @register.filter
+def user_abbr_name(pk):
+    try:
+        user = User.objects.get(pk=pk)
+    except:
+        return "none"
+    return user.profile.abbr_name()
+
+@register.filter
 def dt_replace(string):
     if "_dt" in string:
         return string.replace("_dt", " date")
@@ -40,4 +50,6 @@ def dt_replace(string):
 
 @register.filter
 def render_dt(string):
-    return datetime.datetime.strptime(string, '%Y-%m-%dT%H:%M:%S')
+    if string:
+        return datetime.datetime.strptime(string, '%Y-%m-%dT%H:%M:%SZ')
+    return "None"
