@@ -8,10 +8,6 @@
           data-toggle="dropdown" href="{% url users %}">People <b class="caret"></b></a>
                 <ul class="dropdown-menu">
                     <li><a href="{% url user_detail_pk request.user.pk %}">My Dashboard</a></li>
-                    <li class="divider"></li>
-                    {% for u in ACTIVE_USERS %}
-                    <li><a href="{% url user_detail_pk u.user_id %}">{{ u.nice_name }}</a></li>
-                    {% endfor %}
                 </ul>
             </li>
             <li class="dropdown{% if project or projects %} active{% endif %}"><a class="dropdown-toggle"

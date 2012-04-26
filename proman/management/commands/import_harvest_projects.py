@@ -41,10 +41,10 @@ class Command(BaseCommand):
 
                         if "sem" in p['name'].lower() or "seo" in p['name'].lower() or "ppc" in p['name'].lower() or "creative" in p['name'].lower():
                             ongoing = True
-                            owner = Profile.objects.filter(team=4).order_by('?')[0].user.pk
                         else:
                             ongoing = False
-                            owner = Profile.objects.filter(team=3).order_by('?')[0].user.pk
+
+                        owner = Profile.objects.filter(user__is_active=True).order_by('?')[0].user.pk
 
                         if p['active']:
                             status = "In Progress"

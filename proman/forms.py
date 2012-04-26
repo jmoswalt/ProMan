@@ -5,9 +5,11 @@ from django.utils import timezone
 from proman.models import Task, Project
 
 DUE_DT_INITIAL = timezone.now() + timedelta(weeks=1)
+COMPLETED_DT_INITIAL = timezone.now()
 
 class TaskForm(forms.ModelForm):
-    due_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'))
+    due_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="Due Date")
+    completed_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="Completion Date", required=False)
 
     class Meta:
         model = Task
@@ -20,7 +22,7 @@ class TaskForm(forms.ModelForm):
             'description',
             'task_time',
             'billable',
-            'status',
+            'stuck',
             'private',
             'resolution',
         )
@@ -36,12 +38,23 @@ class TaskForm(forms.ModelForm):
                 self._errors['due_dt'] = ['Invalid date selected.']
         return due_dt
 
+    def clean_completed_dt(self):
+        completed_dt = self.cleaned_data.get('completed_dt')
+        if completed_dt:
+            try:
+                completed_dt = datetime.strptime(completed_dt, '%m/%d/%Y')
+                completed_dt = timezone.make_aware(completed_dt, timezone.utc)
+            except ValueError:
+                completed_dt = None
+                self._errors['completed_dt'] = ['Invalid date selected.']
+        return completed_dt
+
     def __init__(self, *args, **kwargs):
         super(TaskForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(version=False)
 
 class ProjectForm(forms.ModelForm):
-    start_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'))
+    start_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="Start Date")
     end_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="End Date", required=False)
 
     class Meta:
@@ -97,7 +110,6 @@ class TaskMiniForm(forms.ModelForm):
         fields = (
             'title',
             'due_dt',
-            'status',
             'task_time',
             'description',
             'billable',
@@ -119,25 +131,34 @@ class TaskMiniForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(TaskMiniForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(version=False)
-        self.fields['due_dt'].initial = DUE_DT_INITIAL
 
 class TaskCloseForm(forms.ModelForm):
-    status = forms.CharField(widget=forms.HiddenInput)
+    completed = forms.BooleanField(widget=forms.HiddenInput, required=False)
+    completed_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="Completion Date")
 
     class Meta:
         model = Task
 
         fields = (
-            'status',
+            'completed',
             'task_time',
+            'completed_dt',
             'resolution',
         )
+
+    def clean_completed_dt(self):
+        completed_dt = self.cleaned_data.get('completed_dt')
+        if completed_dt:
+            try:
+                completed_dt = datetime.strptime(completed_dt, '%m/%d/%Y')
+                completed_dt = timezone.make_aware(completed_dt, timezone.utc)
+            except ValueError:
+                completed_dt = None
+                self._errors['completed_dt'] = ['Invalid date selected.']
+        return completed_dt
 
     def __init__(self, *args, **kwargs):
         super(TaskCloseForm, self).__init__(*args, **kwargs)
 
-    def clean_status(self):
-        status = self.cleaned_data.get('status')
-        if status:
-            return "Done"
-        return status
+    def clean_completed(self):
+        return True

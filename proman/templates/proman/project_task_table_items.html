@@ -1,10 +1,12 @@
 <tbody>
+{% if tasks %}
 {% for task in tasks %}
-    <tr id="task-{{ task.pk }}">
-        <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a>&nbsp;&nbsp;<a href="{% url task_update task.pk %}?next={{ request.path }}" class="label info">Edit</a></td>
+    <tr id="task-{{ task.pk }}"{% if task.stuck %} class="stuck"{% endif %}>
+        <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a>&nbsp;&nbsp;<a href="{% url task_detail task.pk %}?next={{ request.path }}&closeform=1" class="label success pull-right">Close</a>&nbsp;&nbsp;<a href="{% url task_update task.pk %}?next={{ request.path }}" class="label info pull-right">Edit</a></td>
         <td><a href="{{ task.cached_assignee_url }}">{{ task.cached_assignee_name }}</a></td>
-        <td>{{ task.due_dt|date:"m/d, D" }}</td>
+        <td{% if task.overdue %} class="red"{% endif %}>{% if task.completed %}{{ task.completed_dt|date:"m/d, D" }}{% else %}{{ task.due_dt|date:"m/d, D" }}{% endif %}</td>
         <td>{{ task.task_time }}</td>
     </tr>
 {% endfor %}
+{% endif %}
 </tbody>

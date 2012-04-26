@@ -15,7 +15,7 @@
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ task.title }} <small>Est: <strong></strong>{{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</strong> &mdash; {% if task.status == "Done" %}Done{% else %}Due: <strong>{{ task.due_dt|naturaltime }}</strong>{% endif %}</small></h1>
+        <h1>{{ task.title }} <small>{% if not task.completed %}Est: {% endif %}<strong></strong>{{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</strong> &mdash; {% if task.completed %}Done {{ task.completed_dt|naturaltime }}{% else %}Due: <strong>{{ task.due_dt|naturaltime }}</strong>{% endif %}</small></h1>
     </div>
     <div class="row">
         {% include "messages.html" %}
@@ -27,7 +27,7 @@
             </div>
             {% endif %}
             <div>{{ task.description|safe|linebreaks }}</div>
-            {% if task.resolution and task.status == "Done" %}
+            {% if task.resolution and task.completed %}
             <div class="alert alert-block alert-success">
                 <h4 class="alert-heading">This task has been closed.</h4>
                 <p>{{ task.resolution }}</p>
@@ -40,7 +40,7 @@
         </div>
         <div class="span4">
             <p><strong>Assigned to:</strong> <a href="{% url user_detail task.assignee.username %}">{{ task.assignee.profile.abbr_name }}</a><br />
-            <strong>Due Date:</strong> <span class="colorize{% if task.status != "Done" %} {{ task.due_class }}{% endif %}">{{ task.due_dt|date:"l, n/j" }}</span><br />
+            <strong>Due Date:</strong> <span class="colorize{% if task.completed %} {{ task.due_class }}{% endif %}">{{ task.due_dt|date:"l, n/j" }}</span><br />
             <strong>Status:</strong> {{ task.status }}<br />
             
             {% if task.billable %}
@@ -85,13 +85,20 @@
 {% endblock body %}
 
 {% block js %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.17.custom.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-modal.js"></script>
 <script type="text/javascript">
 $(document).ready(function() {
     $('#close-form-modal').modal('hide');
+
+    if (getParameterByName("closeform") == 1) {
+        $('#close-form-modal').modal('show');
+    }
+
     $('#close-form-modal button.cancel').click(function(){
         $('#close-form-modal').modal('hide');
     });
+    $( "#id_completed_dt" ).datepicker();
 });
 </script>
 {% endblock js %}

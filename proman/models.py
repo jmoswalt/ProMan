@@ -1,5 +1,6 @@
 from decimal import Decimal
 from datetime import datetime, date, timedelta
+from math import sqrt
 
 from django.db import models
 from django.db.models import Sum, Count
@@ -28,6 +29,7 @@ PROJECT_STATUS_CHOICES = (
 
 HOURLY_RATE = 125
 DEFAULT_RATE = 100
+NOW_STR = datetime.strftime(timezone.now(), "%Y%m%d")
 
 class Team(models.Model):
     name = models.CharField(max_length=100)
@@ -83,112 +85,82 @@ class Project(models.Model):
             return datediff.days
         return 0
 
-    def tasks_count(self):
-        key = "project.tasks_count"
+    def tasks(self):
+        key = "project.tasks"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self.task_set.filter(version=False).count()
+            cached = self.task_set.filter(version=False).order_by('due_dt')
             if cached is None:
-                cached = 0
+                cached = []
             cache_item(cached, cache_key)
         return cached
+
+    def tasks_count(self):
+        if self.tasks():
+            return self.tasks().count()
+        return 0
 
     def tasks_hours(self):
-        key = "project.tasks_hours"
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
-        cached = cache.get(cache_key)
-        if cached is None:
-            cached = self.task_set.filter(version=False).aggregate(total_time=Sum('task_time'))['total_time']
-            if cached is None:
-                cached = 0
-            cache_item(cached, cache_key)
-        return cached
-
-    def tasks_count_by_status(self, status):
-        key = "project.tasks_%s_count" % status.replace(" ", "_")
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
-        cached = cache.get(cache_key)
-        if cached is None:
-            cached = self.task_set.filter(version=False, status=("%s" % status)).count()
-            if cached is None:
-                cached = 0
-            cache_item(cached, cache_key)
-        return cached
-
-    def tasks_hours_by_status(self, status):
-        key = "project.tasks_%s_hours" % status.replace(" ", "_")
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id)
-        cached = cache.get(cache_key)
-        if cached is None:
-            cached = self.task_set.filter(version=False, status=("%s" % status)).aggregate(total_time=Sum('task_time'))['total_time']
-            if cached is None:
-                cached = 0
-            cache_item(cached, cache_key)
-        return cached
-
-    def tasks_by_status(self, status):
-        key = "project.tasks_%s" % status.replace(" ", "_")
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id)
-        cached = cache.get(cache_key)
-        if cached is None:
-            cached = self.task_set.filter(version=False, status=("%s" % status)).order_by('due_dt')
-            if cached is None:
-                cached = 0
-            cache_item(cached, cache_key)
-        return cached
+        if self.tasks():
+            return self.tasks().aggregate(total_time=Sum('task_time'))['total_time']
+        return 0
 
     def tasks_done(self):
-        return self.tasks_by_status("done")
-
-    def tasks_done_count(self):
-        return self.tasks_count_by_status("done")
-
-    def tasks_done_hours(self):
-        return self.tasks_hours_by_status("done")
-
-    def tasks_stuck(self):
-        return self.tasks_by_status("stuck")
-
-    def tasks_stuck_count(self):
-        return self.tasks_count_by_status("stuck")
-
-    def tasks_stuck_hours(self):
-        return self.tasks_hours_by_status("stuck")
-
-    def tasks_in_progress(self):
-        return self.tasks_by_status("in progress")
-
-    def tasks_in_progress_count(self):
-        return self.tasks_count_by_status("in progress")
-
-    def tasks_in_progress_hours(self):
-        return self.tasks_hours_by_status("in progress")
-
-    def tasks_not_started(self):
-        return self.tasks_by_status("not started")
-
-    def tasks_not_started_count(self):
-        return self.tasks_count_by_status("not started")
-
-    def tasks_not_started_hours(self):
-        return self.tasks_hours_by_status("not started")
-
-    def completion_perc(self):
-        key = "project.completion_perc"
+        key = "project.tasks_done"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self.task_set.filter(version=False, status="done").aggregate(total_time=Sum('task_time'))['total_time']
+            cached = self.task_set.filter(version=False, completed=True).order_by('due_dt')
             if cached is None:
-                cached = 0
+                cached = []
             cache_item(cached, cache_key)
-        result = cached
+        return cached
+
+    def tasks_done_hours(self):
+        if self.tasks_done():
+            return self.tasks_done().aggregate(total_time=Sum('task_time'))['total_time']
+        return 0
+
+    def tasks_done_count(self):
+        if self.tasks_done():
+            return self.tasks_done().count()
+        return 0
+
+    def tasks_not_done(self):
+        if self.tasks():
+            undone = [t for t in self.tasks() if t not in self.tasks_done()]
+            return undone
+        return []
+
+    def tasks_not_done_hours(self):
+        if self.tasks_hours():
+            return self.tasks_hours() - self.tasks_done_hours()
+        return 0
+
+    def tasks_not_done_count(self):
+        if self.tasks_count():
+            return self.tasks_count() - self.tasks_done_count()
+        return 0
+
+    def completion_perc(self):
+        done = float(self.tasks_done_count())
+        total = float(self.tasks_count())
+        avg_tasks = 36.0
+        lowest = done
+        if done > avg_tasks: lowest = avg_tasks
+
         perc = 0
-        if self.task_budget > 0:
-            perc = round((result / self.task_budget)*100, 1)
+        if total > 0:
+            # Custom formula from JMO and Alex
+            perc = round((1 - ((total - done)/total))*(lowest/avg_tasks)*100, 1)
 
         return perc
+
+    def score(self):
+        # age * budget * 100 - completion percentage
+        rate = self.age()*self.harvest_budget()["bp"]*(100 - self.completion_perc())*.001
+        return int(round(sqrt(rate)))
 
     def budget_dollars(self):
         return self.task_budget*DEFAULT_RATE
@@ -199,8 +171,6 @@ class Project(models.Model):
         if perc:
             if self.ongoing:
                 pc = "info"
-            elif perc < 10:
-                pc = "danger"
             elif perc >= 90:
                 pc = "success"
         return pc
@@ -218,6 +188,17 @@ class Project(models.Model):
 
         return ac
 
+    def score_class(self):
+        sc = "danger"
+        if self.score() < 10:
+            sc = "success"
+        elif self.score() < 30:
+            sc = "info"
+        elif self.score() < 50:
+            sc = "warning"
+
+        return sc
+
     def status_class(self):
         if self.status == "Done":
             sc = "success"
@@ -225,6 +206,7 @@ class Project(models.Model):
             sc = "danger"
         else:
             sc = "warning"
+
         return sc
 
     def harvest_budget(self):
@@ -234,45 +216,56 @@ class Project(models.Model):
             if bp < 100:
                 return {"first": bp,
                     "first_class": "success",
+                    "bp": bp
                     }
             elif bp > 200:
                 return {"first": 0,
                     "first_class": "success",
                     "over": bp - 100,
                     "over_perc": 100,
-                    "over_class": "danger"
+                    "neg_over": 100 - bp,
+                    "over_class": "danger",
+                    "bp": bp
                     }
             else:
                 return {
                     "first": 200 - bp,
                     "first_class": "success",
                     "over": bp - 100,
+                    "neg_over": 100 - bp,
                     "over_perc": bp - 100,
-                    "over_class": "danger"
+                    "over_class": "danger",
+                    "bp": bp
                     }
-        return {}
+        return {"bp": 0}
 
-    def harvest_budget_spent(self):
-        try:
+    def harvest_project_id(self):
+        key = "project.harvest_project_id"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
+        cached = cache.get(cache_key)
+        if cached is None:
             harvest_match = ThirdParty.objects.get(
                 content_type=ContentType.objects.get(model='project'),
                 object_id=self.id,
                 service_item_label='harvest_project_id',
                 )
-            harvest_project_id = harvest_match.service_item_value
-        except:
-            harvest_project_id = None
+            cached = harvest_match.service_item_value
+            if cached is None:
+                cached = []
+            cache_item(cached, cache_key)
+        return cached
 
-        if harvest_project_id:
-            keys = [settings.SITE_CACHE_KEY, str(harvest_project_id), str(self.pk), datetime.strftime(timezone.now(), "%Y%m%d")]
+    def harvest_budget_spent(self):
+        hpi = self.harvest_project_id()
+        if hpi:
+            keys = [settings.SITE_CACHE_KEY, str('harvest_budget_spent'), str(self.id), NOW_STR]
             key = '.'.join(keys)
-
-            if not cache.get(key):
+            if cache.get(key) is None:
                 from proman.harvest import Harvest
                 entries = Harvest().project_entries(
-                    harvest_project_id,
+                    hpi,
                     datetime.strftime(self.start_dt, "%Y%m%d"),
-                    datetime.strftime(timezone.now(), "%Y%m%d"),
+                    NOW_STR,
                     "yes"
                     )
                 hours = 0
@@ -282,7 +275,6 @@ class Project(models.Model):
                             hours = hours + float(e['hours'])
                 value = int(round(hours*HOURLY_RATE))
                 cache_item(value, key)
-
             return cache.get(key)
         return None
 
@@ -343,9 +335,12 @@ class Task(models.Model):
     project = models.ForeignKey(Project)
     assignee = models.ForeignKey(User, related_name="assignee", verbose_name="Assign to")
     due_dt = models.DateTimeField(_('Due Date'), blank=True, null=True)
+    completed_dt = models.DateTimeField(_('Completion Date'), blank=True, null=True)
     task_time = models.DecimalField(_("Time"), max_digits=5, decimal_places=2, choices=TASK_TIME_CHOICES, default='1.00')
-    status = models.CharField(choices=TASK_STATUS_CHOICES, max_length=20, default='unstarted')
+    completed = models.BooleanField(default=False)
     private = models.BooleanField(default=False)
+    stuck = models.BooleanField(default=False)
+    #TODO: Change this to pull from the API. Probably a new model and M2M on it
     billable = models.BooleanField(default=True)
     resolution = models.TextField(blank=True)
 
@@ -365,7 +360,7 @@ class Task(models.Model):
         return ('task_detail', [self.pk])
 
     def overdue(self):
-        if self.due_dt and self.status != "Done":
+        if self.due_dt and not self.completed:
             today = timezone.now()
             datediff = self.due_dt - today
             if datediff.days < 0:
@@ -443,13 +438,13 @@ class Profile(models.Model):
         return projects
 
     def total_open_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self.user).exclude(status="done").aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        tasks = Task.objects.filter(version=False, assignee=self.user).exclude(completed=True).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
         return tasks
 
     def velocity_tasks(self):
         today = SUNDAY - timedelta(weeks=1)
         three_weeks_ago = MONDAY - timedelta(weeks=4)
-        tasks = Task.objects.filter(version=False, assignee=self.user, status="done", due_dt__gte=three_weeks_ago, due_dt__lte=today).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        tasks = Task.objects.filter(version=False, assignee=self.user, completed=True, due_dt__gte=three_weeks_ago, due_dt__lte=today).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
         if tasks['total_hours'] > 0:
             tasks['total_hours'] = round(tasks['total_hours']/3,2)
         if tasks['num_tasks'] > 0:
@@ -457,11 +452,11 @@ class Profile(models.Model):
         return tasks
 
     def week_due_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self.user, due_dt__gte=MONDAY, due_dt__lte=SUNDAY).exclude(status="done").aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        tasks = Task.objects.filter(version=False, assignee=self.user, due_dt__gte=MONDAY, due_dt__lte=SUNDAY).exclude(completed=True).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
         return tasks
 
     def week_done_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self.user, status="done", due_dt__gte=MONDAY, due_dt__lte=SUNDAY).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        tasks = Task.objects.filter(version=False, assignee=self.user, completed=True, completed_dt__gte=MONDAY, completed_dt__lte=SUNDAY).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
         return tasks
 
 def create_user_profile(sender, instance, created, **kwargs):
