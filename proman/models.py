@@ -225,7 +225,7 @@ class Project(models.Model):
 
     def harvest_budget(self):
         hbs = self.harvest_budget_spent()
-        if hbs > float(0):
+        if hbs > float(0) and self.budget_dollars() > float(0):
             bp = round((hbs/float(self.budget_dollars()))*100,1)
             if bp < 100:
                 return {"first": bp,
