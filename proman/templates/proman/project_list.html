@@ -6,7 +6,7 @@
 <div class="content project project-list">
     <div class="page-header">
         <h1>Project List <small>(<span id="projects-shown"></span> of {{ projects_total  }} - {{ display }}) | <a href="{% url project_create %}?next={{ request.path }}" class="colorize success">add new</a></small><small class="pull-right">
-        <a href="{% url projects %}?display=all">Show all</a> | <a href="{% url projects %}">Show not done</a> |  <a href="{% url projects %}{% url projects %}?display=done">Show only done</a>
+        <a href="{% url projects %}?display=all">Show all</a> | <a href="{% url projects %}">Show not done</a> |  <a href="{% url projects %}?display=done">Show only done</a>
         </small></h1>
     </div>
     <div class="row">

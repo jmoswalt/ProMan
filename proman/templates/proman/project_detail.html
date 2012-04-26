@@ -62,6 +62,7 @@ tr.stuck { background-color: #fadada; }
             </div>
             <div class="span4 pull-right well">
                 <h3>Latest Activity</h3>
+                {% if project.tasks_logs %}
                 <ul>
                 {% for item in project.tasks_logs %}
                 <li><a href="{% url task_detail item.object_id %}">{{ item.object_id|task_name }}</a>
@@ -71,6 +72,10 @@ tr.stuck { background-color: #fadada; }
                 {% endif %} {{ item.action_time|naturaltime }}</li>
                 {% endfor %}
                 </ul>
+                {% else %}
+                No activity yet
+                {% endif %}
+                
             </div>
         </div>
     </div>
