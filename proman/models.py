@@ -8,6 +8,7 @@ from django.db.models.signals import post_save
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.contrib.auth.models import User
+from django.contrib.admin.models import LogEntry
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -84,6 +85,19 @@ class Project(models.Model):
         if datediff.days > 0:
             return datediff.days
         return 0
+
+    def tasks_logs(self):
+        key = "project.tasks_logs"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
+        cached = cache.get(cache_key)
+        if cached is None:
+            task_pks = [item.pk for item in self.tasks()]
+            cached = LogEntry.objects.filter(content_type=ContentType.objects.get(model='task'), action_flag__in=[1,5,6], object_id__in=task_pks).order_by('-action_time')[:6]
+            if cached is None:
+                cached = []
+            cache_item(cached, cache_key)
+        print cached
+        return cached
 
     def tasks(self):
         key = "project.tasks"

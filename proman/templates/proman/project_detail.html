@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
 {% load proman_tags %}
+{% load humanize %}
+{% load proman_filters %}
 
 {% block title %}Project: {{ project.name }}{% endblock title %}
 
@@ -41,17 +43,34 @@ tr.stuck { background-color: #fadada; }
                     </div>
                     {% harvest_progress_bar project %}
                 </div>
-                <h4>About the project:</h4>
-                <p>{{ project.description|safe|linebreaks }}</p>
+                <div class="row">
+                    <div class="span3">
+                        <h4 class="colorize {{ project.status_class }}">{{ project.status|title }}</h4>
+                        <p><strong>Owner:</strong> <a href="{{ cached_owner_url }}">{{ project.cached_owner_name }}</a></p>
+                        <p><a class="btn primary" href="{% url project_update project.pk %}">Edit Project</a></p>
+                        
+                    </div>
+                    <div class="span4">
+                        <p><strong>Technology:</strong> {{ project.technology }}<br />
+                        <strong>Started:</strong> {{ project.start_dt|date:"n/j/Y" }}
+                        {% if project.ongoing %}<br /><span class="label warning">Ongoing</span>{% endif %}
+                        </p>
+                        {% if project.description %}<h4>About the project:</h4>
+                        <p>{{ project.description|safe|linebreaks }}</p>{% endif %}
+                    </div>
+                </div>
             </div>
             <div class="span4 pull-right well">
-                <h4 class="colorize {{ project.status_class }}">{{ project.status|title }}</h4>
-                <p><strong>Owner:</strong> <a href="{{ cached_owner_url }}">{{ project.cached_owner_name }}</a><br />
-                <strong>Technology:</strong> {{ project.technology }}<br />
-                <strong>Started:</strong> {{ project.start_dt|date:"n/j/Y" }}
-                {% if project.ongoing %}<br /><span class="label warning">Ongoing</span>{% endif %}
-                </p>
-                <a class="btn primary" href="{% url project_update project.pk %}">Edit Project</a>
+                <h3>Latest Activity</h3>
+                <ul>
+                {% for item in project.tasks_logs %}
+                <li><a href="{% url task_detail item.object_id %}">{{ item.object_id|task_name }}</a>
+                {% if item.action_flag == 1 %} was added
+                {% elif item.action_flag == 5 %} was closed
+                {% else %} deadline missed
+                {% endif %} {{ item.action_time|naturaltime }}</li>
+                {% endfor %}
+                </ul>
             </div>
         </div>
     </div>

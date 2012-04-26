@@ -8,11 +8,15 @@ def clear_tasks_cache(sender, instance, created, **kwargs):
         keys = [
             'project.tasks',
             'project.tasks_done',
+            'project.tasks_logs',
         ]
         clear_keys = {}
         for key in keys:
             clear_keys[(".".join([settings.SITE_CACHE_KEY, '%s', str(instance.project.pk)]) % key)] = None
         cache.set_many(clear_keys, None)
+
+        task_key = ".".join([settings.SITE_CACHE_KEY, 'task', str(instance.pk)])
+        cache.set(task_key, None)
 
 def clear_profile_cache(sender, instance, **kwargs):
     keys = [

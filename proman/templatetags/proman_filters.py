@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.core.cache import cache
 
+from proman.models import Task
 from proman.utils import cache_item
 
 register = template.Library()
@@ -42,6 +43,19 @@ def user_object(pk):
             cached = "None"
         cache_item(cached, cache_key)
     return cached
+
+@register.filter
+def task_name(pk):
+    key = "task"
+    cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, pk) 
+    cached = cache.get(cache_key)
+    if cached is None:
+        try:
+            cached = Task.objects.get(pk=pk)
+        except:
+            cached = "None"
+        cache_item(cached, cache_key)
+    return cached.title
 
 @register.filter
 def user_abbr_name(pk):
