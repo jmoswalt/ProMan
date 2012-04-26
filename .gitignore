@@ -15,3 +15,5 @@ static/*
 
 # except for .gitignore
 !.gitignore
+
+cache/*

@@ -144,6 +144,15 @@ INSTALLED_APPS = (
 
 AUTH_PROFILE_MODULE = 'proman.Profile'
 
+SITE_CACHE_KEY = "proman"
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/tmp/django_cache',
+    }
+}
+
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
 # the site admins on every HTTP 500 error when DEBUG=False.

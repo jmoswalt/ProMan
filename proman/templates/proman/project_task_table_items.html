@@ -1,12 +1,10 @@
 <tbody>
 {% for task in tasks %}
     <tr id="task-{{ task.pk }}">
-        <td>{{ task.pk }}</td>
-        <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a></td>
-        <td><a href="{% url user_detail task.assignee.username %}">{{ task.assignee.profile.abbr_name }}</a></td>
+        <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a>&nbsp;&nbsp;<a href="{% url task_update task.pk %}?next={{ request.path }}" class="label info">Edit</a></td>
+        <td><a href="{{ task.cached_assignee_url }}">{{ task.cached_assignee_name }}</a></td>
         <td>{{ task.due_dt|date:"m/d, D" }}</td>
         <td>{{ task.task_time }}</td>
-        <td><a href="{% url task_update task.pk %}?next={{ request.path }}" class="label info">Edit</a></td>
     </tr>
 {% endfor %}
 </tbody>

@@ -1,9 +1,12 @@
 {% load proman_filters %}
 {% load humanize %}
 
-<ol>
+<ol class="log-items">
 {% for item in logs %}
-    <li value="{{ item.pk }}"><em>{{ item.action_time|naturaltime }}</em> - <a href="{% url user_detail item.user.username %}">{{ item.user.profile.abbr_name }}</a>
+    <li value="{{ forloop.revcounter }}"><em>{{ item.action_time|naturaltime }}</em> - <a href="{% url user_detail_pk item.user_id %}">{{ item.user_id|user_abbr_name }}</a>
+    {% if item.action_flag == 1 %}
+        {{ item.change_message }}
+    {% else %}
     {% for item in item.change_message|str_to_json %}
         {% if "_id" in item.field %}
         changed <span class="log-field">{{ item.field|slice:":-3"|title }}</span> from <a href="{% url user_detail_pk item.old %}"><span class="log-change-old">{{ item.old|user_abbr_name }}</span></a> to <a href="{% url user_detail_pk item.new %}"><span class="log-change-new">{{ item.new|user_abbr_name }}</span></a>{% if not forloop.last %}, {% endif %}
@@ -13,6 +16,7 @@
         changed <span class="log-field">{{ item.field|dt_replace|title }}</span> from <span class="log-change-old">{{ item.old|truncatewords_html:"8" }}</span> to <span class="log-change-new">{{ item.new|truncatewords_html:"8" }}</span>{% if not forloop.last %}, {% endif %}
         {% endif %}
     {% endfor %}
+    {% endif %}
     </li>
 {% endfor %}
 </ol>

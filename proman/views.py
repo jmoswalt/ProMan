@@ -52,24 +52,24 @@ class UserDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(UserDetailView, self).get_context_data(**kwargs)
-        context['user_open_project_tasks'] = Task.objects.filter(version=False, assignee__username=self.kwargs['username']).exclude(status="done").order_by('due_dt','-status')
-        context['user_done_project_tasks'] = Task.objects.filter(version=False, assignee__username=self.kwargs['username'], status="done").order_by('due_dt','-status')
+        context['user_open_project_tasks'] = Task.objects.filter(version=False, assignee=context['user_object']).exclude(status="done").order_by('due_dt','-status')
+        context['user_done_project_tasks'] = Task.objects.filter(version=False, assignee=context['user_object'], status="done").order_by('due_dt','-status')
 
         context['user_project_tasks_hours'] = context['user_open_project_tasks'].aggregate(total=Sum('task_time'))
         
-        context['project_tasks_stuck'] = Task.objects.filter(version=False, assignee__username=self.kwargs['username'], status="stuck").annotate(hours=Sum('task_time')).order_by('due_dt')
+        context['project_tasks_stuck'] = Task.objects.filter(version=False, assignee=context['user_object'], status="stuck").annotate(hours=Sum('task_time')).order_by('due_dt')
         context['project_tasks_stuck_hours'] = context['project_tasks_stuck'].aggregate(total=Sum('task_time'))
 
-        context['project_tasks_in_progress'] = Task.objects.filter(version=False, assignee__username=self.kwargs['username'], status="in progress").annotate(hours=Sum('task_time')).order_by('due_dt')
+        context['project_tasks_in_progress'] = Task.objects.filter(version=False, assignee=context['user_object'], status="in progress").annotate(hours=Sum('task_time')).order_by('due_dt')
         context['project_tasks_in_progress_hours'] = context['project_tasks_in_progress'].aggregate(total=Sum('task_time'))
 
-        context['project_tasks_not_started'] = Task.objects.filter(version=False, assignee__username=self.kwargs['username'], status="not started").order_by('due_dt')
+        context['project_tasks_not_started'] = Task.objects.filter(version=False, assignee=context['user_object'], status="not started").order_by('due_dt')
         context['project_tasks_not_started_hours'] = context['project_tasks_not_started'].aggregate(total=Sum('task_time'))
 
-        context['project_tasks_done'] = Task.objects.filter(version=False, assignee__username=self.kwargs['username'], status="done").order_by('due_dt')
+        context['project_tasks_done'] = Task.objects.filter(version=False, assignee=context['user_object'], status="done").order_by('due_dt')
         context['project_tasks_done_hours'] = context['project_tasks_done'].aggregate(total=Sum('task_time'))
         
-        context['user_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).order_by('status', 'start_dt')
+        context['user_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).order_by('-status', 'start_dt')
         context['user_open_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).exclude(status="done")
         context['user_open_project_stats'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).exclude(status="done").aggregate(total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
 
@@ -189,7 +189,7 @@ class TaskUpdateView(UpdateView):
             content_type_id = ContentType.objects.get_for_model(self.object).pk,
             object_id       = self.object.pk,
             object_repr     = force_unicode(self.object), 
-            action_flag     = CHANGE,
+            action_flag     = 5,
             change_message  = change_message
         )
 #         if self.request.user != self.object.assignee and new_obj.assignee != self.object.assignee:
@@ -327,7 +327,7 @@ class ProjectUpdateView(UpdateView):
 
 class ProjectListView(ListView):
     model = Project
-    queryset = Project.objects.filter(version=False)
+    queryset = Project.objects.filter(version=False).order_by('-status', 'start_dt')[:25]
     context_object_name = "projects"
     template_name = "proman/project_list.html"
 
@@ -337,22 +337,24 @@ class ProjectListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(ProjectListView, self).get_context_data(**kwargs)
-        context['projects'] = Project.objects.filter(version=False).order_by('-status', 'start_dt')
+        context['projects_total'] = Project.objects.filter(version=False).count()
         context['results_paginate'] = "25"
         return context
 
     def render_to_response(self, context):
         """Used to pull paginated items via a GET"""
         if self.request.method == 'GET':
+            all_projects = Project.objects.filter(version=False).order_by('-status', 'start_dt')
             if self.request.GET.get('project_page'):
                 project_page = self.request.GET.get('project_page')
-                paginator = Paginator(context['projects'], context['results_paginate'])
+                paginator = Paginator(all_projects, context['results_paginate'])
                 projects = paginator.page(project_page).object_list
                 return render_to_response("proman/project_table_items.html", locals(), context_instance=RequestContext(self.request))
 
             if self.request.GET.get('project_search'):
                 project_count = self.request.GET.get('project_search')
-                projects = context['projects'][project_count:]
+                current_count = self.request.GET.get('project_current')
+                projects = all_projects[project_count:]
                 return render_to_response("proman/project_table_items.html", locals(), context_instance=RequestContext(self.request))
 
         return render_to_response(self.template_name, context, context_instance=RequestContext(self.request))
@@ -381,18 +383,16 @@ class ProjectDetailView(DetailView):
         form.fields['project'].initial = project
         context = super(ProjectDetailView, self).get_context_data(**kwargs)
 
+        project_tasks = Task.objects.filter(version=False, project=self.kwargs['pk'])
+
         context['form'] = form
-        context['project_tasks_stuck'] = Task.objects.filter(version=False, project=self.kwargs['pk'], status="stuck").annotate(hours=Sum('task_time')).order_by('due_dt')
-        context['project_tasks_stuck_hours'] = context['project_tasks_stuck'].aggregate(total=Sum('task_time'))
+        context['project_tasks_stuck'] = project_tasks.filter(status="stuck").order_by('due_dt')
 
-        context['project_tasks_in_progress'] = Task.objects.filter(version=False, project=self.kwargs['pk'], status="in progress").annotate(hours=Sum('task_time')).order_by('due_dt')
-        context['project_tasks_in_progress_hours'] = context['project_tasks_in_progress'].aggregate(total=Sum('task_time'))
+        context['project_tasks_in_progress'] = project_tasks.filter(status="in progress").order_by('due_dt')
 
-        context['project_tasks_not_started'] = Task.objects.filter(version=False, project=self.kwargs['pk'], status="not started").order_by('due_dt')
-        context['project_tasks_not_started_hours'] = context['project_tasks_not_started'].aggregate(total=Sum('task_time'))
+        #context['project_tasks_not_started'] = project_tasks.filter(status="not started").order_by('due_dt')
 
-        context['project_tasks_done'] = Task.objects.filter(version=False, project=self.kwargs['pk'], status="done").order_by('due_dt')
-        context['project_tasks_done_hours'] = context['project_tasks_done'].aggregate(total=Sum('task_time'))
+        context['project_tasks_done'] = project_tasks.filter(status="done").order_by('due_dt')
         
         context['project_logs'] = LogEntry.objects.filter(object_id=self.object.pk, content_type = ContentType.objects.get_for_model(self.object).pk).order_by('-action_time')
 

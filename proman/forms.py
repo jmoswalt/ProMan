@@ -42,7 +42,7 @@ class TaskForm(forms.ModelForm):
 
 class ProjectForm(forms.ModelForm):
     start_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'))
-    end_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'))
+    end_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="End Date", required=False)
 
     class Meta:
         model = Project
@@ -80,6 +80,12 @@ class ProjectForm(forms.ModelForm):
                 end_dt = None
                 self._errors['end_dt'] = ['Invalid date selected.']
         return end_dt
+
+    def save(self, *args, **kwargs):
+        project = super(ProjectForm, self).save(*args, **kwargs)
+        if not self.cleaned_data.get('end_dt'):
+            project.end_dt = None
+        return project
 
 class TaskMiniForm(forms.ModelForm):
     project = forms.CharField(widget=forms.HiddenInput)

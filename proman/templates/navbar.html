@@ -7,20 +7,16 @@
             <li class="dropdown{% if user_object or users %} active{% endif %}"><a class="dropdown-toggle"
           data-toggle="dropdown" href="{% url users %}">People <b class="caret"></b></a>
                 <ul class="dropdown-menu">
-                    <li><a href="{% url user_detail request.user.username %}">My Dashboard</a></li>
+                    <li><a href="{% url user_detail_pk request.user.pk %}">My Dashboard</a></li>
                     <li class="divider"></li>
                     {% for u in ACTIVE_USERS %}
-                    <li><a href="{% url user_detail u.user.username %}">{{ u.nice_name }}</a></li>
+                    <li><a href="{% url user_detail_pk u.user_id %}">{{ u.nice_name }}</a></li>
                     {% endfor %}
                 </ul>
             </li>
             <li class="dropdown{% if project or projects %} active{% endif %}"><a class="dropdown-toggle"
           data-toggle="dropdown" href="{% url projects %}">Projects <b class="caret"></b></a>
                 <ul class="dropdown-menu">
-                    {% for p in MY_PROJECTS %}
-                    <li><a href="{% url project_detail p.pk %}">{{ p.name }}</a></li>
-                    {% endfor %}
-                    <li class="divider"></li>
                     <li><a href="{% url project_create %}">Add a project</a></li>
                 </ul>
             </li>

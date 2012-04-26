@@ -5,7 +5,7 @@
 {% block body %}
 <div class="content project project-list">
     <div class="page-header">
-        <h1>Project List <small>(<span id="projects-shown"></span> of {{ projects|length  }}) | <a href="{% url project_create %}?next={{ request.path }}" class="colorize success">add new</a></small></small></h1>
+        <h1>Project List <small>(<span id="projects-shown"></span> of {{ projects_total  }}) | <a href="{% url project_create %}?next={{ request.path }}" class="colorize success">add new</a></small></small></h1>
     </div>
     <div class="row">
         {% include "messages.html" %}
@@ -18,13 +18,12 @@
                 <thead>
                 <tr>
                     <th class="blue">#</th>
-                    <th class="blue">Name</th>
+                    <th class="blue">Client</th>
+                    <th class="blue">Project</th>
                     <th class="blue">Owner</th>
                     <th class="blue">Tech</th>
-                    <th class="blue">Status</th>
                     <th class="blue">Age (days)</th>
                     <th class="blue">Tasks</th>
-                    <th class="blue">Hours</th>
                     <th class="blue">% Done</th>
                 </tr>
                 </thead>
@@ -32,7 +31,7 @@
                     {% include "proman/project_table_items.html" with projects=projects|slice:results_paginate %}
                 </tbody>
             </table>
-        {% if projects|length|add:0 > results_paginate|add:0 %}<a id="more-projects" href="javascript:;">Show More Projects</a>{% endif %}
+        {% if projects_total|add:0 > results_paginate|add:0 %}<a id="more-projects" href="javascript:;">Show More Projects</a>{% endif %}
         </div>
     </div>
 </div>
@@ -42,16 +41,17 @@
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.tablesorter.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function() { 
-    $("#project-list").tablesorter({sortList: [[5,1]]});
+    $("#project-list").tablesorter({sortList: [[6,1]]});
 
     $('tr.project-row').show();
 
     $('form#live-filter').on('focus', '#project-search', function(e) {
         var tmpVAL = $('#project-search').val().toLowerCase();
         var loadedCount = $('#projects-shown').text();
-        if (tmpVAL.length == 0 && loadedCount <= {{ projects|length }}) {
+        var totalCount = $("#project-list tbody tr").size();
+        if (tmpVAL.length == 0 && loadedCount <= {{ projects_total }}) {
             // load all projects, update numbers
-            $.get("?project_search={{ results_paginate }}", function(html) { 
+            $.get("?project_search="+totalCount, function(html) { 
               $("#project-list tbody").append(html);
               var totalDone = $("#project-list tbody tr:visible").size();
               $("#projects-shown").text(totalDone);
