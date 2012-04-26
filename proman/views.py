@@ -56,8 +56,8 @@ class UserDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(UserDetailView, self).get_context_data(**kwargs)
-        context['user_open_project_tasks'] = Task.objects.filter(version=False, assignee=context['user_object']).exclude(completed=True).order_by('due_dt','-status')
-        context['user_done_project_tasks'] = Task.objects.filter(version=False, assignee=context['user_object'], completed=True).order_by('due_dt','-status')
+        context['user_open_project_tasks'] = Task.objects.filter(version=False, assignee=context['user_object']).exclude(completed=True).order_by('due_dt')
+        context['user_done_project_tasks'] = Task.objects.filter(version=False, assignee=context['user_object'], completed=True).order_by('due_dt')
 
         context['user_project_tasks_hours'] = context['user_open_project_tasks'].aggregate(total=Sum('task_time'))
         
