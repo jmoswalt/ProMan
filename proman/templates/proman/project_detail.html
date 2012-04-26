@@ -65,9 +65,9 @@ tr.stuck { background-color: #fadada; }
                 <ul>
                 {% for item in project.tasks_logs %}
                 <li><a href="{% url task_detail item.object_id %}">{{ item.object_id|task_name }}</a>
-                {% if item.action_flag == 1 %} was added
-                {% elif item.action_flag == 5 %} was closed
-                {% else %} deadline missed
+                {% if item.action_flag == 1 %} was <strong>added</strong>
+                {% elif item.action_flag == 5 %} was <strong>closed</strong>
+                {% else %} <strong>deadline missed</strong>
                 {% endif %} {{ item.action_time|naturaltime }}</li>
                 {% endfor %}
                 </ul>
