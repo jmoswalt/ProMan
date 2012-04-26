@@ -96,7 +96,6 @@ class Project(models.Model):
             if cached is None:
                 cached = []
             cache_item(cached, cache_key)
-        print cached
         return cached
 
     def tasks(self):
@@ -158,6 +157,8 @@ class Project(models.Model):
         return 0
 
     def completion_perc(self):
+        if self.status == "Done":
+            return 100
         done = float(self.tasks_done_count())
         total = float(self.tasks_count())
         avg_tasks = 36.0

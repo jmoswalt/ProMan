@@ -61,6 +61,7 @@ $(document).ready(function() {
             // load all projects, update numbers
             $.get("?project_search="+totalCount+extraqs, function(html) { 
               $("#project-list tbody").append(html);
+              $("#project-list").tablesorter({sortList: [[8,1]]});
               var totalDone = $("#project-list tbody tr:visible").size();
               $("#projects-shown").text(totalDone);
             });
@@ -91,7 +92,6 @@ $(document).ready(function() {
         projectInc++;
         $.get("?project_page="+projectInc+extraqs, function(html) { 
             $("#project-list tbody").append(html);
-            //$("#project-list").trigger("update");
             $("#project-list").tablesorter({sortList: [[8,1]]});
             var totalDone = $("#project-list tbody tr").size();
             if (totalDone < (projectInc*{{ results_paginate }})) {$("#more-projects").hide();}

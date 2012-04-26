@@ -81,3 +81,12 @@ def render_dt(string):
     if string:
         return datetime.datetime.strptime(string, '%Y-%m-%dT%H:%M:%SZ')
     return "None"
+
+@register.filter
+def action_flag_text(af):
+    if af == 1:
+        return "added"
+    elif af == 5:
+        return "closed"
+    else:
+        return "missed deadline for"

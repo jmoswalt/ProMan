@@ -16,6 +16,18 @@
     <link href="{{ STATIC_URL }}flick/jquery-ui-1.8.17.custom.css" rel="stylesheet">
     {% block css %}
     <style>
+     @font-face {
+        font-family: 'WebSymbolsRegular';
+        src: url('{{ STATIC_URL }}fonts/websymbols-regular-webfont.eot');
+        src: url('{{ STATIC_URL }}fonts/websymbols-regular-webfont.eot?#iefix') format('embedded-opentype'),
+             url('{{ STATIC_URL }}fonts/websymbols-regular-webfont.woff') format('woff'),
+             url('{{ STATIC_URL }}fonts/websymbols-regular-webfont.ttf') format('truetype'),
+             url('{{ STATIC_URL }}fonts/websymbols-regular-webfont.svg#WebSymbolsRegular') format('svg');
+        font-weight: normal;
+        font-style: normal;
+    
+    }
+        .glyph {font-family: 'WebSymbolsRegular';}
         a.active { color: red; }
         .dropdown-menu a {white-space: normal; }
     </style>

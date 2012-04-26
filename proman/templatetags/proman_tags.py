@@ -14,3 +14,10 @@ def harvest_progress_bar(context, project):
         })
         return context
     return ""
+
+@register.inclusion_tag("proman/action_flag_icon.html", takes_context=True)
+def action_flag_icon(context, af):
+    context.update({
+        "af": af,
+    })
+    return context

@@ -18,58 +18,66 @@ tr:hover .label { display: inline; padding: 0px 4px 0px;}
 /*tr:hover td { padding: 3px 5px; }*/
 .log-items {display: none; }
 td.red { font-weight: bold; }
-tr.stuck { background-color: #fadada; }
+tr.stuck { background-color: #FEE9CC; }
+.activity h3 {margin-bottom: 12px; }
+.activity ul {margin-left: 8px; }
+.activity li {list-style-type: none;}
+.activity .glyph { width: 26px; float: left; font-size: 16px; }
+.activity p {width: 264px; }
+.project-stats h1 {font-size: 42px; }
+#project-status {font-size: 22px; padding: 6px; }
+
 </style>
 {% endblock css %}
 
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ project.cached_client_name }} <small>{{ project.name }}</small></h1>
+        <h1>{{ project.cached_client_name }} <small>{{ project.name }}</small><span id="project-status" class="pull-right label {{ project.status_class }}">{{ project.status }}</span></h1>
     </div>
     <div class="page-header">
         <div class="row">
         {% include "messages.html" %}
             <div class="span7">
+                <div class="page-header project-stats">
                 <div class="row">
                     <div class="span3">
                         <h1 class="colorize {{ project.perc_class }}">{{ project.completion_perc }}%</h1><small>Completed</small>
                     </div>
                     <div class="span2">
-                        <h1 class="colorize {{ project.score_class }}">{{ project.score }}</h1><small>Watch</small>
-                    </div>
-                    <div class="span2" style="text-align: right;">
                         <h1 class="colorize {{ project.age_class }}">{{ project.age }}</h1><small>Days Old</small>
                     </div>
-                    {% harvest_progress_bar project %}
+                    <div class="span2" style="text-align: right;">
+                        <h1 class="colorize {{ project.score_class }}">{{ project.score }}</h1><small>Watch</small>
+                    </div>
+                </div>
                 </div>
                 <div class="row">
                     <div class="span3">
-                        <h4 class="colorize {{ project.status_class }}">{{ project.status|title }}</h4>
-                        <p><strong>Owner:</strong> <a href="{{ cached_owner_url }}">{{ project.cached_owner_name }}</a></p>
-                        <p><a class="btn primary" href="{% url project_update project.pk %}">Edit Project</a></p>
                         
-                    </div>
-                    <div class="span4">
-                        <p><strong>Technology:</strong> {{ project.technology }}<br />
+                        <p><h4><strong>Owner:</strong> <a href="{{ cached_owner_url }}">{{ project.cached_owner_name }}</a></h4>
+                        <strong>Technology:</strong> {{ project.technology }}<br />
                         <strong>Started:</strong> {{ project.start_dt|date:"n/j/Y" }}
-                        {% if project.ongoing %}<br /><span class="label warning">Ongoing</span>{% endif %}
+                        {% if project.ongoing %}<br /><span class="label warning">Ongoing</span>{% endif %}<br />
+                         <a class="btn primary small" href="{% url project_update project.pk %}">Edit Project</a>
                         </p>
                         {% if project.description %}<h4>About the project:</h4>
                         <p>{{ project.description|safe|linebreaks }}</p>{% endif %}
+                        
+                    </div>
+                    <div class="span4">
+                        {% harvest_progress_bar project %}
+                        <p>
                     </div>
                 </div>
             </div>
-            <div class="span4 pull-right well">
+            <div class="activity span4 pull-right well">
                 <h3>Latest Activity</h3>
                 {% if project.tasks_logs %}
                 <ul>
                 {% for item in project.tasks_logs %}
-                <li><a href="{% url task_detail item.object_id %}">{{ item.object_id|task_name }}</a>
-                {% if item.action_flag == 1 %} was <strong>added</strong>
-                {% elif item.action_flag == 5 %} was <strong>closed</strong>
-                {% else %} <strong>deadline missed</strong>
-                {% endif %} {{ item.action_time|naturaltime }}</li>
+                <li class="clearfix">{% action_flag_icon item.action_flag %} <p class="pull-left"><a href="{% url user_detail_pk item.user_id %}">{{ item.user_id|user_abbr_name }}</a> {{ item.action_flag|action_flag_text }} <a href="{% url task_detail item.object_id %}">{{ item.object_id|task_name }}</a>
+                {{ item.action_time|naturaltime }}</p></li>
                 {% endfor %}
                 </ul>
                 {% else %}
