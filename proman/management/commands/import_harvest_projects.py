@@ -1,7 +1,8 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import get_object_or_404
 
-from proman.models import Client, Project, ThirdParty, Profile
+from proman.models import Client, Project, ThirdParty, Profile, ContentImport
 from proman.harvest import Harvest
 
 class Command(BaseCommand):
@@ -10,8 +11,14 @@ class Command(BaseCommand):
     """
     def handle(self, *args, **options):
         total = 0
+        content_import_pk = options.get('content_import', None)
+        if content_import_pk:
+            ci = get_object_or_404(ContentImport, pk=content_import_pk)
         data = Harvest().projects()
         if data:
+            # divide by 3 because of Lost Time and Client Services projects
+            ci.estimated_total = round(len(data)/3)
+            ci.save()
             print "Receiving data..."
             for d in data:
                 p = d['project']
@@ -23,6 +30,9 @@ class Command(BaseCommand):
                             content_type=ContentType.objects.get(model='project')
                         )
                         match = Project.objects.get(id=project_match.object_id)
+                        if ci:
+                            ci.matched += 1
+                            ci.save()
                         print "MATCH!!! ", match
                     except:
                         if p['notes']:
@@ -99,5 +109,8 @@ class Command(BaseCommand):
                             service_item_value=p['client_id'],
                         )
 
+                        if ci:
+                            ci.added += 1
+                            ci.save()
                         total += 1
             print "Done. Added %s of %s Projects" % (total, len(data))

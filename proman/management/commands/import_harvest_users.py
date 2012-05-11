@@ -1,6 +1,8 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
-from proman.models import Profile, Team
+from django.shortcuts import get_object_or_404
+
+from proman.models import Profile, Team, ContentImport
 from proman.harvest import Harvest
 
 class Command(BaseCommand):
@@ -9,14 +11,22 @@ class Command(BaseCommand):
     """
     def handle(self, *args, **options):
         total = 0
+        content_import_pk = options.get('content_import', None)
+        if content_import_pk:
+            ci = get_object_or_404(ContentImport, pk=content_import_pk)
         data = Harvest().users()
         if data:
+            ci.estimated_total = len(data)
+            ci.save()
             print "Receiving data..."
             for d in data:
                 u = d['user']
                 try:
                     # try to get the user
                     match = User.objects.get(email=u['email'])
+                    if ci:
+                        ci.matched += 1
+                        ci.save()
                     print "MATCH!!! ", match
                 except:
                     # get team name from department
@@ -37,6 +47,10 @@ class Command(BaseCommand):
                     # update the profile with the team and employee role
                     profile = Profile.objects.get(user=user)
                     profile.team = team[0]
+                    profile.email = u['email']
+                    profile.first_name = u['first_name']
+                    profile.last_name = u['last_name']
+                    profile.phone = u['telephone']
                     profile.role = "employee"
                     profile.save()
 
@@ -44,5 +58,8 @@ class Command(BaseCommand):
                     if u['is_admin'] and u['is_active']:
                         team[0].leader = user
                         team[0].save()
+                    if ci:
+                        ci.added += 1
+                        ci.save()
                     total += 1
             print "Done. Added %s of %s Users" % (total, len(data))

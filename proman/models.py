@@ -15,6 +15,105 @@ from django.utils.translation import ugettext_lazy as _
 
 from proman.utils import cache_item
 
+HOURLY_RATE = 125
+DEFAULT_RATE = 100
+NOW_STR = datetime.strftime(timezone.now(), "%Y%m%d")
+
+
+class ContentImport(models.Model):
+    matched = models.IntegerField(default=0)
+    added = models.IntegerField(default=0)
+    estimated_total = models.IntegerField(default=0)
+    content_type = models.CharField(max_length=100)
+    create_dt = models.DateTimeField(auto_now_add=True)
+
+    def __unicode__(self):
+        return "Import #%s" % self.id
+
+
+class Team(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __unicode__(self):
+        return self.name
+
+
+class Client(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+MONDAY = datetime.now() - timedelta(days=datetime.now().weekday())
+SUNDAY = datetime.now() + timedelta(days=(6 - datetime.now().weekday()))
+
+PROFILE_ROLE_CHOICES = (
+    ('employee','Employee'),
+    ('client','Client'),
+)
+
+class Profile(models.Model):
+    """
+    Profile for users to add more fields.
+    """
+    user = models.OneToOneField(User)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=30)
+    title = models.CharField(max_length=100)
+    role = models.CharField(choices=PROFILE_ROLE_CHOICES, max_length=20, default='client') 
+    team = models.ForeignKey(Team, related_name="team", null=True)
+    client = models.ForeignKey(Client, related_name="client", null=True)
+    team_leader = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return self.nice_name()
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('user_detail', [self.user.username])
+
+    def nice_name(self):
+        """ A Display name to use, fallback to username """
+        if self.user.first_name or self.user.last_name:
+            return "%s %s" % (self.user.first_name, self.user.last_name)
+        return self.user.username
+
+    def abbr_name(self):
+        if self.user.first_name or self.user.last_name:
+            return "%s %s." % (self.user.first_name, self.user.last_name[:1])
+        return self.user.username
+
+    def open_projects(self):
+        projects = Project.objects.filter(version=False, owner=self.user).exclude(status="done").count()
+        return projects
+
+    def total_open_tasks(self):
+        tasks = Task.objects.filter(version=False, assignee=self.user).exclude(completed=True).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        return tasks
+
+    def velocity_tasks(self):
+        today = SUNDAY - timedelta(weeks=1)
+        three_weeks_ago = MONDAY - timedelta(weeks=4)
+        tasks = Task.objects.filter(version=False, assignee=self.user, completed=True, due_dt__gte=three_weeks_ago, due_dt__lte=today).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        if tasks['total_hours'] > 0:
+            tasks['total_hours'] = round(tasks['total_hours']/3,2)
+        if tasks['num_tasks'] > 0:
+            tasks['num_tasks'] = round(Decimal(tasks['num_tasks'])/3,2)
+        return tasks
+
+    def week_due_tasks(self):
+        tasks = Task.objects.filter(version=False, assignee=self.user, due_dt__gte=MONDAY, due_dt__lte=SUNDAY).exclude(completed=True).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        return tasks
+
+    def week_done_tasks(self):
+        tasks = Task.objects.filter(version=False, assignee=self.user, completed=True, completed_dt__gte=MONDAY, completed_dt__lte=SUNDAY).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        return tasks
+
+
 PROJECT_TECHNOLOGY_CHOICES = (
     ('Tendenci','Tendenci'),
     ('WordPress','WordPress'),
@@ -28,23 +127,6 @@ PROJECT_STATUS_CHOICES = (
     ('Done','Done'),
 )
 
-HOURLY_RATE = 125
-DEFAULT_RATE = 100
-NOW_STR = datetime.strftime(timezone.now(), "%Y%m%d")
-
-class Team(models.Model):
-    name = models.CharField(max_length=100)
-    leader = models.ForeignKey(User, related_name="team_leader", null=True)
-
-    def __unicode__(self):
-        return self.name
-
-class Client(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-
-    def __unicode__(self):
-        return self.name
 
 class Project(models.Model):
     """
@@ -52,7 +134,7 @@ class Project(models.Model):
     """
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    owner = models.ForeignKey(User, related_name="project_owner")
+    owner = models.ForeignKey(Profile, related_name="project_owner")
     start_dt = models.DateTimeField(_('Start Date'))
     end_dt = models.DateTimeField(_('End Date'), blank=True, null=True)
     task_budget = models.IntegerField(blank=True, default=80)
@@ -62,8 +144,8 @@ class Project(models.Model):
     client = models.ForeignKey(Client, null=True, related_name="project_client")
 
     # Versioning Info
-    original_creator = models.ForeignKey(User, related_name="project_original_owner")
-    editor = models.ForeignKey(User, related_name="project_editor")
+    original_creator = models.ForeignKey(Profile, related_name="project_original_owner")
+    editor = models.ForeignKey(Profile, related_name="project_editor")
     create_dt = models.DateTimeField(auto_now_add=True)
     update_dt = models.DateTimeField(auto_now=True)
     original = models.ForeignKey('self', null=True, related_name='project_original')
@@ -348,7 +430,7 @@ class Task(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     project = models.ForeignKey(Project)
-    assignee = models.ForeignKey(User, related_name="assignee", verbose_name="Assign to")
+    assignee = models.ForeignKey(Profile, related_name="assignee", verbose_name="Assign to")
     due_dt = models.DateTimeField(_('Due Date'), blank=True, null=True)
     completed_dt = models.DateTimeField(_('Completion Date'), blank=True, null=True)
     task_time = models.DecimalField(_("Time"), max_digits=5, decimal_places=2, choices=TASK_TIME_CHOICES, default='1.00')
@@ -360,8 +442,8 @@ class Task(models.Model):
     resolution = models.TextField(blank=True)
 
     # Versioning Info
-    original_creator = models.ForeignKey(User, related_name="task_original_owner")
-    editor = models.ForeignKey(User, related_name="task_version_owner")
+    original_creator = models.ForeignKey(Profile, related_name="task_original_owner")
+    editor = models.ForeignKey(Profile, related_name="task_version_owner")
     create_dt = models.DateTimeField(auto_now_add=True)
     update_dt = models.DateTimeField(auto_now=True)
     original = models.ForeignKey('self', related_name='task_original', null=True)
@@ -418,69 +500,13 @@ class Task(models.Model):
         return cached
 
 
-MONDAY = datetime.now() - timedelta(days=datetime.now().weekday())
-SUNDAY = datetime.now() + timedelta(days=(6 - datetime.now().weekday()))
-
-PROFILE_ROLE_CHOICES = (
-    ('employee','Employee'),
-    ('client','Client'),
-)
-
-class Profile(models.Model):
-    """
-    Profile for users to add more fields.
-    """
-    user = models.OneToOneField(User)
-    role = models.CharField(choices=PROFILE_ROLE_CHOICES, max_length=20, default='client') 
-    team = models.ForeignKey(Team, related_name="team", null=True)
-
-    @models.permalink
-    def get_absolute_url(self):
-        return ('user_detail', [self.user.username])
-
-    def nice_name(self):
-        if self.user.first_name or self.user.last_name:
-            return "%s %s" % (self.user.first_name, self.user.last_name)
-        return self.user.username
-
-    def abbr_name(self):
-        if self.user.first_name or self.user.last_name:
-            return "%s %s." % (self.user.first_name, self.user.last_name[:1])
-        return self.user.username
-
-    def open_projects(self):
-        projects = Project.objects.filter(version=False, owner=self.user).exclude(status="done").count()
-        return projects
-
-    def total_open_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self.user).exclude(completed=True).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
-        return tasks
-
-    def velocity_tasks(self):
-        today = SUNDAY - timedelta(weeks=1)
-        three_weeks_ago = MONDAY - timedelta(weeks=4)
-        tasks = Task.objects.filter(version=False, assignee=self.user, completed=True, due_dt__gte=three_weeks_ago, due_dt__lte=today).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
-        if tasks['total_hours'] > 0:
-            tasks['total_hours'] = round(tasks['total_hours']/3,2)
-        if tasks['num_tasks'] > 0:
-            tasks['num_tasks'] = round(Decimal(tasks['num_tasks'])/3,2)
-        return tasks
-
-    def week_due_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self.user, due_dt__gte=MONDAY, due_dt__lte=SUNDAY).exclude(completed=True).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
-        return tasks
-
-    def week_done_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self.user, completed=True, completed_dt__gte=MONDAY, completed_dt__lte=SUNDAY).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
-        return tasks
-
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
 
 def update_active_user_cache(sender, instance, created, **kwargs):
     key = ".".join([settings.SITE_CACHE_KEY,'active_users'])
-    value = Profile.objects.filter(user__is_active=True).order_by('user__last_name').select_related()
+    value = Profile.objects.filter(user__is_active=True).order_by('last_name').select_related()
     cache.set(key, value)
 
 post_save.connect(create_user_profile, sender=User)

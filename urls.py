@@ -27,6 +27,11 @@ urlpatterns = patterns('',
     url(r'^tasks/close/(?P<pk>\d+)/$', views.TaskCloseUpdateView.as_view(), name='task_close'),
     url(r'^tasks/(?P<pk>\d+)/$', views.TaskDetailView.as_view(), name='task_detail'),
 
+    # Import from Harvest
+    url(r'^import/(?P<content_type>[\w]+)/$', views.import_content, name='import_content'),
+    url(r'^import/start/(?P<pk>\d+)/$', views.import_start, name='import_start'),
+    url(r'^import/check/(?P<pk>\d+)/$', views.import_check, name='import_check'),
+
     url(r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'admin/login.html'}),
     url(r'^admin/', include(admin.site.urls)),
 )

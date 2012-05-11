@@ -46,6 +46,11 @@ class Harvest(object):
             return self._request('/clients/%s' % id)
         return self._request('/clients')
 
+    def client_contacts(self, id=None):
+        if id:
+            return self._request('/contacts/%s' % id)
+        return self._request('/contacts')
+
     def users(self, id=None):
         if id:
             return self._request('/people/%s' % id)

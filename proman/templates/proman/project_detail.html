@@ -23,7 +23,7 @@ tr.stuck { background-color: #FEE9CC; }
 .activity ul {margin-left: 8px; }
 .activity li {list-style-type: none;}
 .activity .glyph { width: 26px; float: left; font-size: 16px; }
-.activity p {width: 264px; }
+.activity p {width: 224px; }
 .project-stats h1 {font-size: 42px; }
 #project-status {font-size: 22px; padding: 6px; }
 
@@ -38,7 +38,7 @@ tr.stuck { background-color: #FEE9CC; }
     <div class="page-header">
         <div class="row">
         {% include "messages.html" %}
-            <div class="span7">
+            <div class="span8">
                 <div class="page-header project-stats">
                 <div class="row">
                     <div class="span3">
@@ -61,34 +61,38 @@ tr.stuck { background-color: #FEE9CC; }
                         {% if project.ongoing %}<br /><span class="label warning">Ongoing</span>{% endif %}<br />
                          <a class="btn primary small" href="{% url project_update project.pk %}">Edit Project</a>
                         </p>
-                        {% if project.description %}<h4>About the project:</h4>
-                        <p>{{ project.description|safe|linebreaks }}</p>{% endif %}
+                        
                         
                     </div>
-                    <div class="span4">
+                    <div class="span5">
                         {% harvest_progress_bar project %}
                         <p>
                     </div>
+                    <div class="span8">
+                    {% if project.description %}<h4>About the project:</h4>
+                        <p>{{ project.description|safe|linebreaks }}</p>{% endif %}
+                    </div>
                 </div>
             </div>
-            <div class="activity span4 pull-right well">
-                <h3>Latest Activity</h3>
-                {% if project.tasks_logs %}
-                <ul>
-                {% for item in project.tasks_logs %}
-                <li class="clearfix">{% action_flag_icon item.action_flag %} <p class="pull-left"><a href="{% url user_detail_pk item.user_id %}">{{ item.user_id|user_abbr_name }}</a> {{ item.action_flag|action_flag_text }} <a href="{% url task_detail item.object_id %}">{{ item.object_id|task_name }}</a>
-                {{ item.action_time|naturaltime }}</p></li>
-                {% endfor %}
-                </ul>
-                {% else %}
-                No activity yet
-                {% endif %}
-                
+            <div class="activity span4">
+                <div class="well">
+                    <h3>Latest Activity</h3>
+                    {% if project.tasks_logs %}
+                    <ul>
+                    {% for item in project.tasks_logs %}
+                    <li class="clearfix">{% action_flag_icon item.action_flag %} <p class="pull-left"><a href="{% url user_detail_pk item.user_id %}">{{ item.user_id|user_abbr_name }}</a> {{ item.action_flag|action_flag_text }} <a href="{% url task_detail item.object_id %}">{{ item.object_id|task_name }}</a>
+                    {{ item.action_time|naturaltime }}</p></li>
+                    {% endfor %}
+                    </ul>
+                    {% else %}
+                    No activity yet
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
     <div class="row">
-        <div class="span7">
+        <div class="span8">
         <h2>Tasks <small><a href="{% url task_create %}?project={{ project.pk }}&next={{ request.path }}" class="colorize success">add new</a></small></h2>
             <div {% if not project.tasks_not_done %}style="display: none;"{% endif %}>
                 <h3>Not Started <small>{{ project.tasks_not_done_count }} Task{{ project.tasks_not_done_count|pluralize }}, {{ project.tasks_not_done_hours }} Hour{{ project.tasks_not_done_hours|pluralize }}</small></h3>
@@ -116,7 +120,8 @@ tr.stuck { background-color: #FEE9CC; }
             </div>
         </div>
         
-        <div class="span4 pull-right well">
+        <div class="span4">
+            <div class="well">
             <form method="post" action="{% url task_create %}?project={{ project.pk }}&next={{ request.path }}" class="form-inline">{% csrf_token %}
                 <legend>Task Quick Add</legend>
                 {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
@@ -134,6 +139,7 @@ tr.stuck { background-color: #FEE9CC; }
                     <button type="reset" class="btn">Cancel</button>
                 </div>
                 </form>
+                </div>
         </div>
     </div>
 </div>

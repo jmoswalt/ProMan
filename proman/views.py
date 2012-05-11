@@ -8,18 +8,20 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.encoding import force_unicode
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import Http404
 from django.views.generic import DetailView, ListView, CreateView, UpdateView
 from django.views.generic.edit import FormMixin, ModelFormMixin
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.http import HttpResponseRedirect, HttpResponse
+from django.core.management import call_command
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.core.mail import send_mail
 
-from proman.models import Project, Task, Profile
+from proman.models import Project, Task, Profile, ContentImport
 from proman.forms import TaskForm, TaskMiniForm, TaskCloseForm, ProjectForm
 from proman.utils import get_task_change_message, get_project_change_message
 
@@ -404,3 +406,27 @@ class ProjectDetailView(DetailView):
 
         return context
 
+def import_content(request, content_type=None, template_name="proman/import.html"):
+    if content_type not in ['clients', 'projects', 'users']:
+        raise Http404
+    ci = ContentImport.objects.create(content_type=content_type)
+    return render_to_response(template_name, locals(), context_instance=RequestContext(request))
+
+def import_start(request, pk=None, template_name="output.html"):
+    output = "No import found"
+    if pk:
+        ci = get_object_or_404(ContentImport, pk=pk)
+        # run management command with ci content_type as the option
+        command = 'import_harvest_%s' % ci.content_type
+        call_command(command, **{'content_import': int(ci.pk)})
+        output = "Complete!"
+    return render_to_response(template_name, locals(), context_instance=RequestContext(request))
+
+def import_check(request, pk=None, template_name="proman/import_check.html"):
+    if pk:
+        ci = get_object_or_404(ContentImport, pk=pk)
+        # set output to be current status of import
+        perc = 0
+        if ci.estimated_total > 0:
+            perc = int(round((ci.matched + ci.added)*100/ci.estimated_total))
+    return render_to_response(template_name, locals(), context_instance=RequestContext(request))

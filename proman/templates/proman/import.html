@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="span12">
+    <div class="page-header">
+        <h1>Import {{ content_type }}</h1>
+    </div>
+</div>
+<div class="span4">
+    <div class="progress info striped active">
+        <div class="bar"></div>
+    </div>
+    <div id="complete">Processing... </div>
+    <div id="final-results"></div>
+</div>
+<div class="span4">
+    <ol id="results"></ol>
+    <div id="hidden-results"></div>
+</div>
+{% endblock %}
+{% block js %}
+<script type="text/javascript">
+function importCheck() {
+    var complete = $("#complete").html();
+    if (complete.indexOf("Complete") == -1) {
+        $.ajax({
+          url: "/import/check/{{ ci.pk }}/",
+          cache: false
+        }).done(function( html ) {
+          $("#hidden-results").html(html);
+          var matched = $("#hidden-results #matched").text();
+          var added = $("#hidden-results #added").text();
+          var perc = $("#hidden-results #perc").text();
+          console.log(perc);
+          $('.progress .bar').width(perc+"%");
+          $("#results").append("<li>"+matched+" Matched, "+added+" Added</li>")
+        });
+    }
+}
+var import_check = setInterval( "importCheck()", 5000 );
+
+$(document).ready(function() {
+    $.ajax({
+      url: "/import/start/{{ ci.pk }}/",
+      cache: false
+    }).done(function( html ) {
+        importCheck();
+        $("#complete").append(html);
+        $(".progress").removeClass("info active striped");
+        $(".progress").addClass("success");
+    });
+    importCheck();
+});
+
+
+</script>
+{% endblock js %}
