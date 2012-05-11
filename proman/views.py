@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+import subprocess
 
 from django.conf import settings
 from django.db.models import Q, Sum, Avg, Count
@@ -11,6 +12,7 @@ from django.contrib import messages
 from django.http import Http404
 from django.views.generic import DetailView, ListView, CreateView, UpdateView
 from django.views.generic.edit import FormMixin, ModelFormMixin
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.http import HttpResponseRedirect, HttpResponse
@@ -411,27 +413,31 @@ class ProjectDetailView(DetailView):
 def import_content(request, content_type=None, template_name="proman/import.html"):
     if content_type not in ['clients', 'projects', 'users']:
         raise Http404
-    ci = ContentImport.objects.create(content_type=content_type)
-    return render_to_response(template_name, locals(), context_instance=RequestContext(request))
+    ci = ContentImport.objects.create(content_type=content_type, starter=request.user.profile)
+    return HttpResponseRedirect(reverse('import_content_attempt', kwargs={'content_type': content_type, 'pk': int(ci.pk)}))
+    #render_to_response(template_name, locals(), context_instance=RequestContext(request))
 
 
 @login_required
-def import_start(request, pk=None, template_name="output.html"):
-    output = "No import found"
-    if pk:
-        ci = get_object_or_404(ContentImport, pk=pk)
-        # run management command with ci content_type as the option
+def import_content_attempt(request, content_type=None, pk=None, template_name="proman/import.html"):
+    if content_type not in ['clients', 'projects', 'users']:
+        raise Http404
+    ci = get_object_or_404(ContentImport, pk=pk)
+    if not ci.create_dt:
         command = 'import_harvest_%s' % ci.content_type
-        call_command(command, **{'content_import': int(ci.pk)})
-        output = "Complete!"
+        subprocess.Popen(["python", "manage.py", command, str(ci.pk)])
     return render_to_response(template_name, locals(), context_instance=RequestContext(request))
 
 
 @login_required
 def import_check(request, pk=None, template_name="proman/import_check.html"):
+    """
+    Check the import record for matched, added, total, and completeness.
+    Also create the percentage for the bar graph. Render all of these in a hidden
+    div in a template to be reformatted and displayed by javascript
+    """
     if pk:
         ci = get_object_or_404(ContentImport, pk=pk)
-        # set output to be current status of import
         perc = 0
         if ci.estimated_total > 0:
             perc = int(round((ci.matched + ci.added)*100/ci.estimated_total))

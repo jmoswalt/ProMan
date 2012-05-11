@@ -20,17 +20,6 @@ DEFAULT_RATE = 100
 NOW_STR = datetime.strftime(timezone.now(), "%Y%m%d")
 
 
-class ContentImport(models.Model):
-    matched = models.IntegerField(default=0)
-    added = models.IntegerField(default=0)
-    estimated_total = models.IntegerField(default=0)
-    content_type = models.CharField(max_length=100)
-    create_dt = models.DateTimeField(auto_now_add=True)
-
-    def __unicode__(self):
-        return "Import #%s" % self.id
-
-
 class Team(models.Model):
     name = models.CharField(max_length=100)
 
@@ -126,6 +115,19 @@ PROJECT_STATUS_CHOICES = (
     ('In Progress','In Progress'),
     ('Done','Done'),
 )
+
+
+class ContentImport(models.Model):
+    matched = models.IntegerField(default=0)
+    added = models.IntegerField(default=0)
+    estimated_total = models.IntegerField(default=0)
+    content_type = models.CharField(max_length=100)
+    create_dt = models.DateTimeField(null=True)
+    complete_dt = models.DateTimeField(null=True)
+    starter = models.ForeignKey(Profile, related_name="import_starter")
+
+    def __unicode__(self):
+        return "Import #%s" % self.id
 
 
 class Project(models.Model):

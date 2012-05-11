@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from proman.models import Profile, Team, ContentImport
 from proman.harvest import Harvest
@@ -11,9 +12,15 @@ class Command(BaseCommand):
     """
     def handle(self, *args, **options):
         total = 0
-        content_import_pk = options.get('content_import', None)
+        ci = None
+        try:
+            content_import_pk = args[0]
+        except:
+            content_import_pk = None
         if content_import_pk:
             ci = get_object_or_404(ContentImport, pk=content_import_pk)
+            ci.create_dt = timezone.now()
+            ci.save()
         data = Harvest().users()
         if data:
             ci.estimated_total = len(data)
@@ -63,3 +70,6 @@ class Command(BaseCommand):
                         ci.save()
                     total += 1
             print "Done. Added %s of %s Users" % (total, len(data))
+        if ci:
+            ci.complete_dt = timezone.now()
+            ci.save()
