@@ -415,7 +415,6 @@ def import_content(request, content_type=None, template_name="proman/import.html
         raise Http404
     ci = ContentImport.objects.create(content_type=content_type, starter=request.user.profile)
     return HttpResponseRedirect(reverse('import_content_attempt', kwargs={'content_type': content_type, 'pk': int(ci.pk)}))
-    #render_to_response(template_name, locals(), context_instance=RequestContext(request))
 
 
 @login_required
@@ -424,6 +423,8 @@ def import_content_attempt(request, content_type=None, pk=None, template_name="p
         raise Http404
     ci = get_object_or_404(ContentImport, pk=pk)
     if not ci.create_dt:
+        ci.create_dt = timezone.now()
+        ci.save()
         command = 'import_harvest_%s' % ci.content_type
         subprocess.Popen(["python", "manage.py", command, str(ci.pk)])
     return render_to_response(template_name, locals(), context_instance=RequestContext(request))

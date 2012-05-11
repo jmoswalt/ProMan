@@ -19,8 +19,6 @@ class Command(BaseCommand):
             content_import_pk = None
         if content_import_pk:
             ci = get_object_or_404(ContentImport, pk=content_import_pk)
-            ci.create_dt = timezone.now()
-            ci.save()
         data = Harvest().projects()
         if data:
             # divide by 3 because of Lost Time and Client Services projects
