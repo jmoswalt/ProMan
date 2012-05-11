@@ -380,7 +380,7 @@ class Project(models.Model):
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.owner_id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self.owner.profile.get_absolute_url()
+            cached = self.owner.get_absolute_url()
             cache_item(cached, cache_key)
         return cached
 
@@ -389,7 +389,7 @@ class Project(models.Model):
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.owner_id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self.owner.profile.abbr_name()
+            cached = self.owner.abbr_name()
             cache_item(cached, cache_key)
         return cached
 
@@ -486,7 +486,7 @@ class Task(models.Model):
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.assignee_id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self.assignee.profile.get_absolute_url()
+            cached = self.assignee.get_absolute_url()
             cache_item(cached, cache_key)
         return cached
 
@@ -495,7 +495,7 @@ class Task(models.Model):
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.assignee_id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self.assignee.profile.abbr_name()
+            cached = self.assignee.abbr_name()
             cache_item(cached, cache_key)
         return cached
 

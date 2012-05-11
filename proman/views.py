@@ -72,9 +72,9 @@ class UserDetailView(DetailView):
         context['project_tasks_done'] = Task.objects.filter(version=False, assignee=context['user_object'], completed=True).order_by('due_dt')
         context['project_tasks_done_hours'] = context['project_tasks_done'].aggregate(total=Sum('task_time'))
         
-        context['user_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).order_by('-status', 'start_dt')
-        context['user_open_projects'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).exclude(status="done")
-        context['user_open_project_stats'] = Project.objects.filter(version=False, owner__username=self.kwargs['username']).exclude(status="done").aggregate(total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
+        context['user_projects'] = Project.objects.filter(version=False, owner__user__username=self.kwargs['username']).order_by('-status', 'start_dt')
+        context['user_open_projects'] = Project.objects.filter(version=False, owner__user__username=self.kwargs['username']).exclude(status="done")
+        context['user_open_project_stats'] = Project.objects.filter(version=False, owner__user__username=self.kwargs['username']).exclude(status="done").aggregate(total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
 
         context['results_paginate'] = "10"
         return context
@@ -131,8 +131,8 @@ class TaskCreateView(CreateView):
     
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.original_creator = self.request.user
-        self.object.editor = self.request.user
+        self.object.original_creator = self.request.user.profile
+        self.object.editor = self.request.user.profile
         self.object.save()
         self.object.original = self.object
         self.object.save()
@@ -180,7 +180,7 @@ class TaskUpdateView(UpdateView):
         orig = Task.objects.get(pk=self.object.pk)
         new_obj = orig
         new_obj.pk = None
-        new_obj.editor = self.request.user
+        new_obj.editor = self.request.user.profile
         new_obj.version = True
         new_obj.save()
         self.object.save()
@@ -307,7 +307,7 @@ class ProjectUpdateView(UpdateView):
         orig = Project.objects.get(pk=self.object.pk)
         new_obj = orig
         new_obj.pk = None
-        new_obj.editor = self.request.user
+        new_obj.editor = self.request.user.profile
         new_obj.version = True
         new_obj.save()
         self.object.save()
@@ -394,7 +394,7 @@ class ProjectDetailView(DetailView):
         project = self.object.pk
         user = self.request.user
         form = TaskMiniForm()
-        form.fields['assignee'].initial = user.id
+        form.fields['assignee'].initial = user.profile.id
         form.fields['project'].initial = project
         form.fields['due_dt'].initial = DUE_DT_INITIAL
         context = super(ProjectDetailView, self).get_context_data(**kwargs)
@@ -406,12 +406,16 @@ class ProjectDetailView(DetailView):
 
         return context
 
+
+@login_required
 def import_content(request, content_type=None, template_name="proman/import.html"):
     if content_type not in ['clients', 'projects', 'users']:
         raise Http404
     ci = ContentImport.objects.create(content_type=content_type)
     return render_to_response(template_name, locals(), context_instance=RequestContext(request))
 
+
+@login_required
 def import_start(request, pk=None, template_name="output.html"):
     output = "No import found"
     if pk:
@@ -422,6 +426,8 @@ def import_start(request, pk=None, template_name="output.html"):
         output = "Complete!"
     return render_to_response(template_name, locals(), context_instance=RequestContext(request))
 
+
+@login_required
 def import_check(request, pk=None, template_name="proman/import_check.html"):
     if pk:
         ci = get_object_or_404(ContentImport, pk=pk)

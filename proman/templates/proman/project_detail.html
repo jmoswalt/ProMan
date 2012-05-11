@@ -9,6 +9,7 @@
 {% block css %}
 {{ block.super }}
 <style>
+h1 small a { font-size: 13px; text-decoration: underline; }
     .log-field { font-weight: bold; }
     .log-change-old, .log-field-private, .log-field-non-billable { color: #a00; }
     .log-change-new, .log-field-public, .log-field-billable { color: #0a0; font-weight: bold; }
@@ -26,6 +27,7 @@ tr.stuck { background-color: #FEE9CC; }
 .activity p {width: 224px; }
 .project-stats h1 {font-size: 42px; }
 #project-status {font-size: 22px; padding: 6px; }
+.ongoing {font-size: 14px;  padding: 3px 5px;}
 
 </style>
 {% endblock css %}
@@ -33,7 +35,7 @@ tr.stuck { background-color: #FEE9CC; }
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ project.cached_client_name }} <small>{{ project.name }}</small><span id="project-status" class="pull-right label {{ project.status_class }}">{{ project.status }}</span></h1>
+        <h1>{{ project.cached_client_name }} <small>{{ project.name }}  <a class="colorize danger" href="{% url project_update project.pk %}">Edit</a></small><span id="project-status" class="pull-right label {{ project.status_class }}">{{ project.status }}</span></h1>
     </div>
     <div class="page-header">
         <div class="row">
@@ -55,12 +57,9 @@ tr.stuck { background-color: #FEE9CC; }
                 <div class="row">
                     <div class="span3">
                         
-                        <p><h4><strong>Owner:</strong> <a href="{{ cached_owner_url }}">{{ project.cached_owner_name }}</a></h4>
+                        <p>{% if project.ongoing %}<span class="label warning ongoing">Ongoing</span><br />{% endif %}<h4><strong>Owner:</strong> <a href="{{ cached_owner_url }}">{{ project.cached_owner_name }}</a></h4>
                         <strong>Technology:</strong> {{ project.technology }}<br />
-                        <strong>Started:</strong> {{ project.start_dt|date:"n/j/Y" }}
-                        {% if project.ongoing %}<br /><span class="label warning">Ongoing</span>{% endif %}<br />
-                         <a class="btn primary small" href="{% url project_update project.pk %}">Edit Project</a>
-                        </p>
+                        <strong>Started:</strong> {{ project.start_dt|date:"n/j/Y" }}</p>
                         
                         
                     </div>
@@ -69,8 +68,7 @@ tr.stuck { background-color: #FEE9CC; }
                         <p>
                     </div>
                     <div class="span8">
-                    {% if project.description %}<h4>About the project:</h4>
-                        <p>{{ project.description|safe|linebreaks }}</p>{% endif %}
+                    {% if project.description %}<p>{{ project.description|safe|linebreaks }}</p>{% endif %}
                     </div>
                 </div>
             </div>
@@ -111,7 +109,7 @@ tr.stuck { background-color: #FEE9CC; }
             </div>
 
             <div id="change-logs">
-                <h3>Project Changelog {% if project_logs %}<small><a id="toggle-logs" href="javascript:;">Toggle Logs</a></small>{% endif %}</h3>
+                <h3>Project Changelog {% if project_logs %}<small><a id="toggle-logs" href="javascript:;">Show/Hide Logs</a></small>{% endif %}</h3>
                 {% if project_logs %}
                 {% include "proman/log_items.html" with logs=project_logs %}
                 {% else %}
