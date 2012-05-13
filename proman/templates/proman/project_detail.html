@@ -120,7 +120,7 @@ tr.stuck { background-color: #FEE9CC; }
         
         <div class="span4">
             <div class="well">
-            <form method="post" action="{% url task_create %}?project={{ project.pk }}&next={{ request.path }}" class="form-inline">{% csrf_token %}
+            <form id="task-add" method="post" action="{% url task_create %}?project={{ project.pk }}&next={{ request.path }}" class="form-inline">{% csrf_token %}
                 <legend>Task Quick Add</legend>
                 {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
                 {% for field in form.visible_fields %}
@@ -133,7 +133,7 @@ tr.stuck { background-color: #FEE9CC; }
                 </div>
                 {% endfor %}
                 <div class="form-actions">
-                    <button type="submit" class="btn success">Create a Task</button>
+                    <button id="task-add-btn" class="btn success">Create a Task</button>
                     <button type="reset" class="btn">Cancel</button>
                 </div>
                 </form>
@@ -148,23 +148,27 @@ tr.stuck { background-color: #FEE9CC; }
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.tablesorter.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function(){ 
+    if ($("#task-list-done tbody").children().length > 0) {
         $("#task-list-done").tablesorter({
             sortList: [[2,1]],
         });
+    }
+    if ($("#task-list-not-done tbody").children().length > 0) {
         $("#task-list-not-done").tablesorter({
             sortList: [[2,0]],
         });
-        $('[class*=" task-"]').each(function(){
-            var obj = $(this).attr('class').split(' ')[5];
-            console.log(obj);
-            objid = obj.split('-')[1];
-            console.log(objid)
-            $("#task-"+objid).children().css('background-color','#DFF0D8');
-        });
-        $( "#id_due_dt" ).datepicker();
-        $('#toggle-logs').on('click', function() {
-            $('.log-items').toggle();
-        });
+    }
+    $('[class*=" task-"]').each(function(){
+        var obj = $(this).attr('class').split(' ')[5];
+        console.log(obj);
+        objid = obj.split('-')[1];
+        console.log(objid)
+        $("#task-"+objid).children().css('background-color','#DFF0D8');
+    });
+    $( "#id_due_dt" ).datepicker();
+    $('#toggle-logs').on('click', function() {
+        $('.log-items').toggle();
+    });
 });
 </script>
 {% endblock js %}

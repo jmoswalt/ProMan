@@ -69,6 +69,9 @@ STATIC_ROOT = os.path.join('static')
 # Example: "http://media.lawrence.com/static/"
 STATIC_URL = '/static/'
 
+# Admin media pulled from Django Grappelli
+# ADMIN_MEDIA_PREFIX = STATIC_URL + "grappelli/"
+
 # Additional locations of static files
 STATICFILES_DIRS = (
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
@@ -135,6 +138,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # Uncomment the next line to enable the admin:
+    # Waiting on 1.4 compatibility
+    # 'grappelli',
     'django.contrib.admin',
     'django.contrib.humanize',
     # Uncomment the next line to enable admin documentation:

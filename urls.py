@@ -33,5 +33,7 @@ urlpatterns = patterns('',
     url(r'^import/(?P<content_type>[\w]+)/(?P<pk>\d+)/$', views.import_content_attempt, name='import_content_attempt'),
 
     url(r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'admin/login.html'}),
+    # Waiting on 1.4 compatibility
+    # url(r'^grappelli/', include('grappelli.urls')),
     url(r'^admin/', include(admin.site.urls)),
 )
