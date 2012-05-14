@@ -59,7 +59,7 @@ class Command(BaseCommand):
                         else:
                             ongoing = False
 
-                        owner = Profile.objects.filter(user__is_active=True).order_by('?')[0].user.pk
+                        owner = Profile.objects.filter(user__is_active=True).order_by('?')[0].pk
 
                         if p['active']:
                             status = "In Progress"

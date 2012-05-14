@@ -50,6 +50,20 @@ def get_project_change_message(old=None, new=None):
     )
     return get_change_message(old, new, fields)
 
+def get_profile_change_message(old=None, new=None):
+    fields = (
+        'first_name',
+        'last_name',
+        'email',
+        'phone',
+        'title',
+        'role',
+        'team',
+        'team_leader',
+        'client',
+    )
+    return get_change_message(old, new, fields)
+
 def cache_item(value, key=None):
     if key:
         is_set = cache.add(key, value)

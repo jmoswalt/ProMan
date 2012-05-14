@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{% if profile %}Update Profile for {{ profile }}{% else %}Create a Profile{% endif %}{% endblock title %}
+
+{% block body %}
+<div class="content project project-detail">
+    <div class="page-header">
+        <h1>{% if profile %}Update Profile for {{ profile }}{% else %}Create a Profile{% endif %}</h1>
+    </div>
+    <div class="page-header">
+        <div class="row">
+        {% include "messages.html" %}
+            <div class="span8">
+             <form method="post" action="" class="form-horizontal">{% csrf_token %}
+                {% for field in form %}
+                <div class="control-group">
+                    <label class="control-label" for="{{ field.label }}">{{ field.label }}</label>
+                    <div class="controls">
+                        {{ field }}
+                        <p class="help-block">{{ field.errors }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                <div class="form-actions">
+                    <button type="submit" class="btn success">Save this Profile</button>
+                    <button type="reset" class="btn">Cancel</button>
+                </div>
+            </form>
+                
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock body %}
+
+{% block js %}
+<script type="text/javascript">
+
+function teamClient() {
+    $('#id_team, #id_team_leader, #id_client').parent().parent().hide();
+    if ($('#id_role :selected').text() == "Employee") {
+        $('#id_team, #id_team_leader').parent().parent().show();
+    } else {
+        $('#id_client').parent().parent().show();
+    }
+}
+
+$(document).ready(function() { 
+    teamClient();
+});
+
+$('#id_role').on('change', function() {
+    teamClient();
+});
+</script>
+{% endblock js %}

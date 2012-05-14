@@ -7,7 +7,7 @@
             <li class="dropdown{% if user_object or users %} active{% endif %}"><a class="dropdown-toggle"
           data-toggle="dropdown" href="{% url users %}">People <b class="caret"></b></a>
                 <ul class="dropdown-menu">
-                    <li><a href="{% url user_detail_pk request.user.pk %}">My Dashboard</a></li>
+                    <li><a href="{% url user_current %}">My Dashboard</a></li>
                 </ul>
             </li>
             <li class="dropdown{% if project or projects %} active{% endif %}"><a class="dropdown-toggle"
@@ -23,13 +23,19 @@
                     <li><a href="{% url import_content "users" %}">Import Users</a></li>
                     <li><a href="{% url import_content "clients" %}">Import Clients</a></li>
                     <li><a href="{% url import_content "projects" %}">Import Projects</a></li>
+                    <li><a href="{% url import_content "client_contacts" %}">Import Client Contacts</a></li>
                 </ul>
             </li>
             {% else %}
-            <li class="active"><a href="{% url admin:index %}?next=/people/">Login</a></li>
+            <li class="active"><a href="{% url login %}?next={% url user_current %}">Login</a></li>
             {% endif %}
             
           </ul>
+          {% if request.user.is_authenticated %}
+          <ul class="nav pull-right">
+            <li><a href="{% url admin:logout %}?next=/">Logout</a></li>
+          </ul>
+          {% endif %}
         </div>
       </div>
     </div>

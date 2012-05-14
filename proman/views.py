@@ -24,8 +24,8 @@ from django.utils import timezone
 from django.core.mail import send_mail
 
 from proman.models import Project, Task, Profile, ContentImport
-from proman.forms import TaskForm, TaskMiniForm, TaskCloseForm, ProjectForm
-from proman.utils import get_task_change_message, get_project_change_message
+from proman.forms import TaskForm, TaskMiniForm, TaskCloseForm, ProjectForm, ProfileForm
+from proman.utils import get_task_change_message, get_project_change_message, get_profile_change_message
 
 START_DT_INITIAL = timezone.now()
 END_DT_INITIAL = timezone.now() + timedelta(days=90)
@@ -35,13 +35,21 @@ DUE_DT_INITIAL = timezone.now() + timedelta(weeks=1)
 CLOSED = 5
 MISSED = 6
 
+
+def UserCurrent(request):
+    if request.user.is_authenticated():
+        return HttpResponseRedirect(reverse('user_detail', args=[request.user.username]))
+    return HttpResponseRedirect(reverse('home'))
+
+
 def UserIdRedirect(request, pk=None):
     user = get_object_or_404(User, pk=pk)
     return HttpResponseRedirect(reverse('user_detail', args=[user.username]))
 
+
 class UserListView(ListView):
     model = User
-    queryset = Profile.objects.filter(user__is_active=True)
+    queryset = Profile.objects.filter(user__is_active=True, role="Employee").order_by('last_name')
     context_object_name = "users"
     template_name = "proman/user_list.html"
 
@@ -49,9 +57,109 @@ class UserListView(ListView):
     def dispatch(self, *args, **kwargs):
         return super(UserListView, self).dispatch(*args, **kwargs)
 
+
+class ContactListView(UserListView):
+    queryset = Profile.objects.filter(role="Client").order_by('last_name')
+
+
+class UserCreateView(CreateView):
+    """
+    Creates a Profile
+    """
+    form_class = ProfileForm
+    template_name = "proman/user_update.html"
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(UserCreateView, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        self.object = form.save()
+        username = self.object.email
+        if form.cleaned_data['username']:
+            username = form.cleaned_data['username']
+        user_object = User.objects.create(username=username, email=self.object.email, first_name=self.object.first_name, last_name=self.object.last_name, is_active=True)
+        self.object.user = user_object
+        self.object.save()
+
+        change_message = "added this profile"
+
+        LogEntry.objects.log_action(
+            user_id         = self.request.user.pk, 
+            content_type_id = ContentType.objects.get_for_model(self.object).pk,
+            object_id       = self.object.pk,
+            object_repr     = force_unicode(self.object), 
+            action_flag     = ADDITION,
+            change_message  = change_message
+        )
+
+        return HttpResponseRedirect(self.get_success_url())
+    
+    def get_success_url(self):
+        if self.request.GET.has_key('next'):
+            messages.success(self.request, 'Successfully added the profile for <strong><a href="%s">%s</a></strong>.' % (self.object.get_absolute_url(), self.object.nice_name()), extra_tags='success profile-%s' % self.object.pk)
+            return self.request.GET['next']
+
+        messages.success(self.request, 'Successfully added this profile.', extra_tags='success profile-%s' % self.object.pk)
+        return self.object.get_absolute_url()
+
+
+class UserUpdateView(UpdateView):
+    """
+    Updates a Profile
+    """
+    form_class = ProfileForm
+    template_name = "proman/user_update.html"
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(UserUpdateView, self).dispatch(*args, **kwargs)
+
+    def get_object(self, **kwargs):
+        obj = get_object_or_404(Profile, pk=self.kwargs['pk'])
+        return obj
+
+    def get_initial(self):
+        super(UserUpdateView, self).get_initial()
+        self.initial = {"username":self.get_object().user.username}
+        return self.initial
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        orig = Profile.objects.get(pk=self.object.pk)
+        self.object = form.save()
+        profile = self.object
+        profile.user.first_name = profile.first_name
+        profile.user.last_name = profile.last_name
+        profile.user.email = profile.email
+        profile.user.username = form.cleaned_data['username']
+        profile.user.save()
+
+        change_message = get_profile_change_message(orig, self.object)
+
+        LogEntry.objects.log_action(
+            user_id         = self.request.user.pk, 
+            content_type_id = ContentType.objects.get_for_model(self.object).pk,
+            object_id       = self.object.pk,
+            object_repr     = force_unicode(self.object), 
+            action_flag     = CHANGE,
+            change_message  = change_message
+        )
+
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        if self.request.GET.has_key('next'):
+            messages.success(self.request, 'Successfully updated the profile for <strong><a href="%s">%s</a></strong>.' % (self.object.get_absolute_url(), self.object.nice_name()), extra_tags='success profile-%s' % self.object.pk)
+            return self.request.GET['next']
+
+        messages.success(self.request, 'Successfully updated this profile.', extra_tags='success profile-%s' % self.object.pk)
+        return self.object.get_absolute_url()
+
+
 class UserDetailView(DetailView):
     model = Profile
-    context_object_name = "user_object"
+    context_object_name = "profile_object"
     template_name = "proman/user_detail.html"
 
     @method_decorator(login_required)
@@ -60,23 +168,23 @@ class UserDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(UserDetailView, self).get_context_data(**kwargs)
-        context['user_open_project_tasks'] = Task.objects.filter(version=False, assignee=context['user_object']).exclude(completed=True).order_by('due_dt')
-        context['user_done_project_tasks'] = Task.objects.filter(version=False, assignee=context['user_object'], completed=True).order_by('due_dt')
+        context['user_open_project_tasks'] = Task.objects.filter(version=False, assignee=context['profile_object']).exclude(completed=True).order_by('due_dt')
+        context['user_done_project_tasks'] = Task.objects.filter(version=False, assignee=context['profile_object'], completed=True).order_by('due_dt')
 
         context['user_project_tasks_hours'] = context['user_open_project_tasks'].aggregate(total=Sum('task_time'))
         
-        context['project_tasks_stuck'] = Task.objects.filter(version=False, assignee=context['user_object'], stuck=True).annotate(hours=Sum('task_time')).order_by('due_dt')
+        context['project_tasks_stuck'] = Task.objects.filter(version=False, assignee=context['profile_object'], stuck=True).annotate(hours=Sum('task_time')).order_by('due_dt')
         context['project_tasks_stuck_hours'] = context['project_tasks_stuck'].aggregate(total=Sum('task_time'))
 
-        context['project_tasks_not_started'] = Task.objects.filter(version=False, assignee=context['user_object'], completed=False).order_by('due_dt')
+        context['project_tasks_not_started'] = Task.objects.filter(version=False, assignee=context['profile_object'], completed=False).order_by('due_dt')
         context['project_tasks_not_started_hours'] = context['project_tasks_not_started'].aggregate(total=Sum('task_time'))
 
-        context['project_tasks_done'] = Task.objects.filter(version=False, assignee=context['user_object'], completed=True).order_by('due_dt')
+        context['project_tasks_done'] = Task.objects.filter(version=False, assignee=context['profile_object'], completed=True).order_by('due_dt')
         context['project_tasks_done_hours'] = context['project_tasks_done'].aggregate(total=Sum('task_time'))
         
-        context['user_projects'] = Project.objects.filter(version=False, owner__user__username=self.kwargs['username']).order_by('-status', 'start_dt')
-        context['user_open_projects'] = Project.objects.filter(version=False, owner__user__username=self.kwargs['username']).exclude(status="done")
-        context['user_open_project_stats'] = Project.objects.filter(version=False, owner__user__username=self.kwargs['username']).exclude(status="done").aggregate(total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
+        context['user_projects'] = Project.objects.filter(version=False, owner=context['profile_object']).order_by('-status', 'start_dt')
+        context['user_open_projects'] = Project.objects.filter(version=False, owner=context['profile_object']).exclude(status="done")
+        context['user_open_project_stats'] = Project.objects.filter(version=False, owner=context['profile_object']).exclude(status="done").aggregate(total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
 
         context['results_paginate'] = "10"
         return context
@@ -411,7 +519,7 @@ class ProjectDetailView(DetailView):
 
 @login_required
 def import_content(request, content_type=None, template_name="proman/import.html"):
-    if content_type not in ['clients', 'projects', 'users']:
+    if content_type not in ['clients', 'projects', 'users', 'client_contacts']:
         raise Http404
     ci = ContentImport.objects.create(content_type=content_type, starter=request.user.profile)
     return HttpResponseRedirect(reverse('import_content_attempt', kwargs={'content_type': content_type, 'pk': int(ci.pk)}))
@@ -419,7 +527,7 @@ def import_content(request, content_type=None, template_name="proman/import.html
 
 @login_required
 def import_content_attempt(request, content_type=None, pk=None, template_name="proman/import.html"):
-    if content_type not in ['clients', 'projects', 'users']:
+    if content_type not in ['clients', 'projects', 'users', 'client_contacts']:
         raise Http404
     ci = get_object_or_404(ContentImport, pk=pk)
     if not ci.create_dt:

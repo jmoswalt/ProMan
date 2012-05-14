@@ -47,15 +47,15 @@ class Profile(models.Model):
     """
     Profile for users to add more fields.
     """
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, null=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField()
-    phone = models.CharField(max_length=30)
-    title = models.CharField(max_length=100)
+    phone = models.CharField(max_length=30, blank=True)
+    title = models.CharField(max_length=100, blank=True)
     role = models.CharField(choices=PROFILE_ROLE_CHOICES, max_length=20, default='client') 
-    team = models.ForeignKey(Team, related_name="team", null=True)
-    client = models.ForeignKey(Client, related_name="client", null=True)
+    team = models.ForeignKey(Team, related_name="team", null=True, blank=True)
+    client = models.ForeignKey(Client, related_name="client", null=True, blank=True)
     team_leader = models.BooleanField(default=False)
 
     def __unicode__(self):
@@ -67,8 +67,8 @@ class Profile(models.Model):
 
     def nice_name(self):
         """ A Display name to use, fallback to username """
-        if self.user.first_name or self.user.last_name:
-            return "%s %s" % (self.user.first_name, self.user.last_name)
+        if self.first_name or self.last_name:
+            return "%s %s" % (self.first_name, self.last_name)
         return self.user.username
 
     def abbr_name(self):
@@ -502,8 +502,8 @@ class Task(models.Model):
         return cached
 
 
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
+def create_first_user_profile(sender, instance, created, **kwargs):
+    if created and instance.pk == 1:
         Profile.objects.create(user=instance)
 
 def update_active_user_cache(sender, instance, created, **kwargs):
@@ -511,7 +511,7 @@ def update_active_user_cache(sender, instance, created, **kwargs):
     value = Profile.objects.filter(user__is_active=True).order_by('last_name').select_related()
     cache.set(key, value)
 
-post_save.connect(create_user_profile, sender=User)
+post_save.connect(create_first_user_profile, sender=User)
 post_save.connect(update_active_user_cache, sender=Profile)
 
 class ThirdParty(models.Model):

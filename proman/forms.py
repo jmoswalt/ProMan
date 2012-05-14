@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 from django import forms
 from django.contrib.admin import widgets
 from django.utils import timezone
-from proman.models import Task, Project
+from django.contrib.auth.models import User
+from proman.models import Task, Project, Profile
 
 DUE_DT_INITIAL = timezone.now() + timedelta(weeks=1)
 COMPLETED_DT_INITIAL = timezone.now()
@@ -162,3 +163,33 @@ class TaskCloseForm(forms.ModelForm):
 
     def clean_completed(self):
         return True
+
+class ProfileForm(forms.ModelForm):
+    username = forms.CharField(help_text="Username defaults to email address if left empty.")
+
+    class Meta:
+        model = Profile
+
+        fields = (
+            'first_name',
+            'last_name',
+            'email',
+            'username',
+            'phone',
+            'title',
+            'role',
+            'team',
+            'team_leader',
+            'client',
+        )
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if username:
+            if self.instance.user.username != username:
+                try:
+                    User.objects.get(username=username)
+                    self._errors['username'] = 'That username is already taken. Please pick a different one.'
+                except:
+                    pass
+        return username

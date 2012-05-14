@@ -50,7 +50,7 @@ class Command(BaseCommand):
                     user.save()
 
                     # update the profile with the team and employee role
-                    profile = Profile.objects.get(user=user)
+                    profile = Profile(user=user)
                     profile.team = team[0]
                     profile.email = u['email']
                     profile.first_name = u['first_name']
