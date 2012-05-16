@@ -50,16 +50,25 @@ def UserIdRedirect(request, pk=None):
 class UserListView(ListView):
     model = User
     queryset = Profile.objects.filter(user__is_active=True, role="Employee").order_by('last_name')
-    context_object_name = "users"
+    context_object_name = "active_employees"
     template_name = "proman/user_list.html"
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(UserListView, self).dispatch(*args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super(UserListView, self).get_context_data(**kwargs)
+        context['inactive_employees'] = Profile.objects.filter(user__is_active=False, role="Employee").order_by('last_name')
+        inactive_employees = context['inactive_employees']
+        inactive_pks = [p.pk for p in inactive_employees]
+        context['open_projects_inactives'] = Project.objects.filter(version=False, owner_id__in=inactive_pks).exclude(status="done")
+        context['open_tasks_inactives'] = Task.objects.filter(version=False, assignee_id__in=inactive_pks, completed=False)
+        return context
 
 class ContactListView(UserListView):
     queryset = Profile.objects.filter(role="Client").order_by('last_name')
+    template_name = "proman/client_list.html"
 
 
 class UserCreateView(CreateView):
@@ -168,13 +177,11 @@ class UserDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(UserDetailView, self).get_context_data(**kwargs)
+        #TODO: Move all of these contexts into methods for the Profile object
         context['user_open_project_tasks'] = Task.objects.filter(version=False, assignee=context['profile_object']).exclude(completed=True).order_by('due_dt')
         context['user_done_project_tasks'] = Task.objects.filter(version=False, assignee=context['profile_object'], completed=True).order_by('due_dt')
 
         context['user_project_tasks_hours'] = context['user_open_project_tasks'].aggregate(total=Sum('task_time'))
-        
-        context['project_tasks_stuck'] = Task.objects.filter(version=False, assignee=context['profile_object'], stuck=True).annotate(hours=Sum('task_time')).order_by('due_dt')
-        context['project_tasks_stuck_hours'] = context['project_tasks_stuck'].aggregate(total=Sum('task_time'))
 
         context['project_tasks_not_started'] = Task.objects.filter(version=False, assignee=context['profile_object'], completed=False).order_by('due_dt')
         context['project_tasks_not_started_hours'] = context['project_tasks_not_started'].aggregate(total=Sum('task_time'))
@@ -185,6 +192,11 @@ class UserDetailView(DetailView):
         context['user_projects'] = Project.objects.filter(version=False, owner=context['profile_object']).order_by('-status', 'start_dt')
         context['user_open_projects'] = Project.objects.filter(version=False, owner=context['profile_object']).exclude(status="done")
         context['user_open_project_stats'] = Project.objects.filter(version=False, owner=context['profile_object']).exclude(status="done").aggregate(total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
+
+        # Pull projects for a client
+        if context['profile_object'].client:
+            context['user_projects'] = Project.objects.filter(version=False, client=context['profile_object'].client).order_by('-status', 'start_dt')
+            context['user_open_project_tasks'] = Task.objects.filter(version=False, project__client=context['profile_object'].client).exclude(completed=True, private=True).order_by('due_dt')
 
         context['results_paginate'] = "10"
         return context
@@ -458,14 +470,14 @@ class ProjectListView(ListView):
         context = super(ProjectListView, self).get_context_data(**kwargs)
 
         projects = Project.objects.filter(version=False).exclude(status="Done").order_by('-status', 'start_dt')
-        context['display'] = "Hiding Done"
+        context['display'] = "open"
         if self.request.GET.get('display'):
             display = self.request.GET.get('display')
             if display == "all":
-                context['display'] = "Showing All"
+                context['display'] = display
                 projects = Project.objects.filter(version=False).order_by('-status', 'start_dt')
             if display == "done":
-                context['display'] = "Showing only Done"
+                context['display'] = display
                 projects = Project.objects.filter(version=False, status="Done").order_by('-status', 'start_dt')
         context['filtered_projects'] = projects
         context['projects_total'] = projects.count()

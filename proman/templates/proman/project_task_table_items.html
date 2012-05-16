@@ -4,7 +4,7 @@
     <tr id="task-{{ task.pk }}"{% if task.stuck %} class="stuck"{% endif %}>
         <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a>
         {% if not task.completed %}&nbsp;&nbsp;<a href="{% url task_detail task.pk %}?next={{ request.path }}&closeform=1" class="label success pull-right">Close</a>{% endif %}&nbsp;&nbsp;<a href="{% url task_update task.pk %}?next={{ request.path }}" class="label info pull-right">Edit</a></td>
-        <td><a href="{{ task.cached_assignee_url }}">{{ task.cached_assignee_name }}</a></td>
+        <td><a href="{{ task.assignee_url }}">{{ task.assignee_name }}</a></td>
         <td{% if task.overdue %} class="red"{% endif %}>{% if task.completed %}{{ task.completed_dt|date:"m/d, D" }}{% else %}{{ task.due_dt|date:"m/d, D" }}{% endif %}
         {% if task.overdue %}&nbsp;<span class="glyph colorize danger">W</span>{% endif %}</td>
         <td>{{ task.task_time }}</td>

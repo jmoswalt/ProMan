@@ -1,8 +1,8 @@
             {% for project in projects %}
                 <tr class="project-row">
-                    <td>{{ project.cached_client_name }}</td>
+                    <td>{{ project.client_name }}</td>
                     <td><a href="{% url project_detail project.pk %}">{{ project.name }}</a></td>
-                    <td><a href="{{ project.cached_owner_url }}">{{ project.cached_owner_name }}</a></td>
+                    <td><a href="{{ project.owner_url }}">{{ project.owner_name }}</a></td>
                     <td>{{ project.technology }}</td>
                     <td>{{ project.end_dt|date:"m/d/y" }}</td>
                     <td>{{ project.age }}</td>

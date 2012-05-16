@@ -7,6 +7,9 @@
             <li class="dropdown{% if user_object or users %} active{% endif %}"><a class="dropdown-toggle"
           data-toggle="dropdown" href="{% url users %}">People <b class="caret"></b></a>
                 <ul class="dropdown-menu">
+                    <li><a href="{% url contacts %}">Client Contacts</a></li>
+                    <li><a href="{% url users %}">Employees</a></li>
+                    <li class="divider"></li>
                     <li><a href="{% url user_current %}">My Dashboard</a></li>
                 </ul>
             </li>

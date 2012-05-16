@@ -53,6 +53,7 @@ class TaskForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(TaskForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(version=False)
+        self.fields['assignee'].queryset = Profile.objects.filter(role="employee", user__is_active=True)
 
 class ProjectForm(forms.ModelForm):
     start_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="Start Date")
@@ -95,6 +96,18 @@ class ProjectForm(forms.ModelForm):
                 self._errors['end_dt'] = ['Invalid date selected.']
         return end_dt
 
+    def __init__(self, *args, **kwargs):
+        super(ProjectForm, self).__init__(*args, **kwargs)
+        # Restrict the list of potential Owners to active employees
+        active_employees = Profile.objects.filter(role="employee", user__is_active=True)
+        self.fields['owner'].queryset = active_employees
+
+        # If we have an instance, be sure to add the current owner in case they
+        # are not currently an active employee.
+        if self.instance:
+            owner_qs = Profile.objects.filter(pk=self.instance.owner_id)
+            self.fields['owner'].queryset = owner_qs | active_employees
+
     def save(self, *args, **kwargs):
         project = super(ProjectForm, self).save(*args, **kwargs)
         if not self.cleaned_data.get('end_dt'):
@@ -132,6 +145,7 @@ class TaskMiniForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(TaskMiniForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(version=False)
+        self.fields['assignee'].queryset = Profile.objects.filter(role="employee", user__is_active=True)
 
 class TaskCloseForm(forms.ModelForm):
     completed = forms.BooleanField(widget=forms.HiddenInput, required=False)

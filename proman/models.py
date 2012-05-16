@@ -35,8 +35,8 @@ class Client(models.Model):
         return self.name
 
 
-MONDAY = datetime.now() - timedelta(days=datetime.now().weekday())
-SUNDAY = datetime.now() + timedelta(days=(6 - datetime.now().weekday()))
+MONDAY = timezone.now() - timedelta(days=timezone.now().weekday())
+SUNDAY = timezone.now() + timedelta(days=(6 - timezone.now().weekday()))
 
 PROFILE_ROLE_CHOICES = (
     ('employee','Employee'),
@@ -63,44 +63,138 @@ class Profile(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('user_detail', [self.user.username])
+        key = "profile.get_absolute_url"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.pk) 
+        cached = cache.get(cache_key)
+        if cached is None:
+            cached = ('user_detail', [self.user.username])
+            cache.add(cache_key, cached)
+        return cached
 
     def nice_name(self):
         """ A Display name to use, fallback to username """
         if self.first_name or self.last_name:
             return "%s %s" % (self.first_name, self.last_name)
-        return self.user.username
+        else:
+            key = "profile.nice_name"
+            cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.pk) 
+            cached = cache.get(cache_key)
+            if cached is None:
+                cached = self.user.username
+                cache.add(cache_key, cached)
+            return cached
 
     def abbr_name(self):
-        if self.user.first_name or self.user.last_name:
-            return "%s %s." % (self.user.first_name, self.user.last_name[:1])
-        return self.user.username
+        if self.first_name or self.last_name:
+            return "%s %s." % (self.first_name, self.last_name[:1])
+        else:
+            key = "profile.abbr_name"
+            cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.pk) 
+            cached = cache.get(cache_key)
+            if cached is None:
+                cached = self.user.username
+                cache.add(cache_key, cached)
+            return cached
+
+    def client_name(self):
+        if self.client_id:
+            key = "client.name"
+            cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.client_id) 
+            cached = cache.get(cache_key)
+            if cached is None:
+                cached = self.client.name
+                cache.add(cache_key, cached)
+            return cached
+        return ""
+
+    def _open_projects(self):
+         projects = Project.objects.filter(version=False, owner_id=self.user_id).exclude(status="done").count()
+         return projects
 
     def open_projects(self):
-        projects = Project.objects.filter(version=False, owner=self.user).exclude(status="done").count()
+        key = "profile.open_projects"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
+        cached = cache.get(cache_key)
+        if cached is None:
+            cached = self._open_projects()
+            print self.pk, cached
+            cache.add(cache_key, cached)
+        return cached
+
+    def _done_projects(self):
+        projects = Project.objects.filter(version=False, owner_id=self.user_id, status="done").count()
         return projects
 
-    def total_open_tasks(self):
+    def done_projects(self):
+        key = "profile.done_projects"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
+        cached = cache.get(cache_key)
+        if cached is None:
+            cached = self._done_projects()
+            cache.add(cache_key, cached)
+        return cached
+
+    def _total_open_tasks(self):
         tasks = Task.objects.filter(version=False, assignee=self.user).exclude(completed=True).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
         return tasks
 
-    def velocity_tasks(self):
+    def total_open_tasks(self):
+        key = "profile.total_open_tasks"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
+        cached = cache.get(cache_key)
+        if cached is None:
+            cached = self._total_open_tasks()
+            cache.add(cache_key, cached)
+        return cached
+
+    def _velocity_tasks(self):
         today = SUNDAY - timedelta(weeks=1)
         three_weeks_ago = MONDAY - timedelta(weeks=4)
-        tasks = Task.objects.filter(version=False, assignee=self.user, completed=True, due_dt__gte=three_weeks_ago, due_dt__lte=today).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        tasks = Task.objects.filter(version=False, assignee_id=self.user_id, completed=True, due_dt__gte=three_weeks_ago, due_dt__lte=today).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
         if tasks['total_hours'] > 0:
             tasks['total_hours'] = round(tasks['total_hours']/3,2)
         if tasks['num_tasks'] > 0:
             tasks['num_tasks'] = round(Decimal(tasks['num_tasks'])/3,2)
         return tasks
 
+    def velocity_tasks(self):
+        key = "profile.velocity_tasks"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
+        cached = cache.get(cache_key)
+        if cached is None:
+            cached = self._velocity_tasks()
+            if cached is None:
+                cached = []
+            cache.add(cache_key, cached)
+        return cached
+
+    def _week_due_tasks(self):
+        tasks = Task.objects.filter(version=False, assignee_id=self.user_id, due_dt__gte=MONDAY, due_dt__lte=SUNDAY).exclude(completed=True).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        return tasks
+
     def week_due_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self.user, due_dt__gte=MONDAY, due_dt__lte=SUNDAY).exclude(completed=True).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
+        key = "profile.week_due_tasks"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
+        cached = cache.get(cache_key)
+        if cached is None:
+            cached = self._week_due_tasks()
+            if cached is None:
+                cached = []
+            cache.add(cache_key, cached)
+        return cached
+
+    def _week_done_tasks(self):
+        tasks = Task.objects.filter(version=False, assignee_id=self.user_id, completed=True, completed_dt__gte=MONDAY, completed_dt__lte=SUNDAY).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
         return tasks
 
     def week_done_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self.user, completed=True, completed_dt__gte=MONDAY, completed_dt__lte=SUNDAY).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
-        return tasks
+        key = "profile.week_done_tasks"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
+        cached = cache.get(cache_key)
+        if cached is None:
+            cached = self._week_done_tasks()
+            cache.add(cache_key, cached)
+        return cached
 
 
 PROJECT_TECHNOLOGY_CHOICES = (
@@ -179,7 +273,7 @@ class Project(models.Model):
             cached = LogEntry.objects.filter(content_type=ContentType.objects.get(model='task'), action_flag__in=[1,5,6], object_id__in=task_pks).order_by('-action_time')[:6]
             if cached is None:
                 cached = []
-            cache_item(cached, cache_key)
+            cache.add(cache_key, cached)
         return cached
 
     def tasks(self):
@@ -190,7 +284,7 @@ class Project(models.Model):
             cached = self.task_set.filter(version=False).order_by('due_dt')
             if cached is None:
                 cached = []
-            cache_item(cached, cache_key)
+            cache.add(cache_key, cached)
         return cached
 
     def tasks_count(self):
@@ -200,7 +294,12 @@ class Project(models.Model):
 
     def tasks_hours(self):
         if self.tasks():
-            return self.tasks().aggregate(total_time=Sum('task_time'))['total_time']
+            total = 0
+            for i in self.tasks():
+                total += i.task_time
+            print type(total)
+            return total
+            #return self.tasks().aggregate(total_time=Sum('task_time'))['total_time']
         return 0
 
     def tasks_done(self):
@@ -208,15 +307,18 @@ class Project(models.Model):
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self.task_set.filter(version=False, completed=True).order_by('due_dt')
-            if cached is None:
-                cached = []
-            cache_item(cached, cache_key)
+            cached = self.tasks().filter(completed=True).order_by('due_dt')
+            cache.add(cache_key, cached)
         return cached
 
     def tasks_done_hours(self):
         if self.tasks_done():
-            return self.tasks_done().aggregate(total_time=Sum('task_time'))['total_time']
+            total = 0
+            for i in self.tasks_done():
+                total += i.task_time
+            print type(total)
+            return total
+            #return self.tasks_done().aggregate(total_time=Sum('task_time'))['total_time']
         return 0
 
     def tasks_done_count(self):
@@ -225,10 +327,13 @@ class Project(models.Model):
         return 0
 
     def tasks_not_done(self):
-        if self.tasks():
-            undone = [t for t in self.tasks() if t not in self.tasks_done()]
-            return undone
-        return []
+        key = "project.tasks_not_done"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
+        cached = cache.get(cache_key)
+        if cached is None:
+            cached = self.tasks().filter(completed=False).order_by('due_dt')
+            cache.add(cache_key, cached)
+        return cached
 
     def tasks_not_done_hours(self):
         if self.tasks_hours():
@@ -351,7 +456,7 @@ class Project(models.Model):
             cached = harvest_match.service_item_value
             if cached is None:
                 cached = []
-            cache_item(cached, cache_key)
+            cache.add(cache_key, cached)
         return cached
 
     def harvest_budget_spent(self):
@@ -377,34 +482,34 @@ class Project(models.Model):
             return cache.get(key)
         return None
 
-    def cached_owner_url(self):
+    def owner_url(self):
         key = "profile.get_absolute_url"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.owner_id) 
         cached = cache.get(cache_key)
         if cached is None:
             cached = self.owner.get_absolute_url()
-            cache_item(cached, cache_key)
+            cache.add(cache_key, cached)
         return cached
 
-    def cached_owner_name(self):
+    def owner_name(self):
         key = "profile.abbr_name"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.owner_id) 
         cached = cache.get(cache_key)
         if cached is None:
             cached = self.owner.abbr_name()
-            cache_item(cached, cache_key)
+            cache.add(cache_key, cached)
         return cached
 
-    def cached_client_name(self):
+    def client_name(self):
         key = "client.name"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.client_id) 
         cached = cache.get(cache_key)
         if cached is None:
-            if self.client:
+            if self.client_id:
                 cached = self.client.name
             else:
-                cached = None
-            cache_item(cached, cache_key)
+                cached = ""
+            cache.add(cache_key, cached)
         return cached
 
 TASK_TIME_CHOICES = (
@@ -483,22 +588,22 @@ class Task(models.Model):
 
         return dc
 
-    def cached_assignee_url(self):
+    def assignee_url(self):
         key = "profile.get_absolute_url"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.assignee_id) 
         cached = cache.get(cache_key)
         if cached is None:
             cached = self.assignee.get_absolute_url()
-            cache_item(cached, cache_key)
+            cache.add(cache_key, cached)
         return cached
 
-    def cached_assignee_name(self):
+    def assignee_name(self):
         key = "profile.abbr_name"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.assignee_id) 
         cached = cache.get(cache_key)
         if cached is None:
             cached = self.assignee.abbr_name()
-            cache_item(cached, cache_key)
+            cache.add(cache_key, cached)
         return cached
 
 

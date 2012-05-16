@@ -61,10 +61,6 @@
     <div class="row">
     <div class="span3 pull-right">
         <h3>Tasks Summary</h3>
-            <h3>Stuck</h3>
-            <p>{{ project_tasks_stuck|length }} Tasks, {{ project_tasks_stuck_hours.total }} Hours</p>
-            <h3>In Progress</h3>
-            <p>{{ project_tasks_in_progress|length }} Tasks, {{ project_tasks_in_progress_hours.total }} Hours</p>
             <h3>Unstarted</h3>
             <p>{{ project_tasks_not_started|length }} Tasks, {{ project_tasks_not_started_hours.total }} Hours</p>
             <h3>Done</h3>
@@ -78,16 +74,6 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <th>Stuck</th>
-                    <td>{{ project_tasks_stuck|length }}</td>
-                    <td>{{ project_tasks_stuck_hours.total }}</td>
-                </tr>
-                <tr>
-                    <th>In Progress</th>
-                    <td>{{ project_tasks_in_progress|length }}</td>
-                    <td>{{ project_tasks_in_progress_hours.total }}</td>
-                </tr>
                 <tr>
                     <th>Unstarted</th>
                     <td>{{ project_tasks_not_started|length }}</td>
@@ -104,7 +90,6 @@
                     <th class="blue">#</th>
                     <th class="blue">Task</th>
                     <th class="blue">Project</th>
-                    <th class="blue">Status</th>
                     <th class="blue">Due on</th>
                     <th class="blue">Hours</th>
                     <th>Edit</th>
@@ -124,7 +109,6 @@
                     <th class="green">#</th>
                     <th class="green">Task</th>
                     <th class="green">Project</th>
-                    <th class="green">Status</th>
                     <th class="green">Done on</th>
                     <th class="green">Hours</th>
                     <th>Edit</th>

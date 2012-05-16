@@ -35,7 +35,7 @@ tr.stuck { background-color: #FEE9CC; }
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ project.cached_client_name }} <small>{{ project.name }}  <a class="colorize danger" href="{% url project_update project.pk %}">Edit</a></small><span id="project-status" class="pull-right label {{ project.status_class }}">{{ project.status }}</span></h1>
+        <h1>{{ project.client_name }} <small>{{ project.name }}  <a class="colorize danger" href="{% url project_update project.pk %}">Edit</a></small><span id="project-status" class="pull-right label {{ project.status_class }}">{{ project.status }}</span></h1>
     </div>
     <div class="page-header">
         <div class="row">
@@ -57,7 +57,7 @@ tr.stuck { background-color: #FEE9CC; }
                 <div class="row">
                     <div class="span3">
                         
-                        <p>{% if project.ongoing %}<span class="label warning ongoing">Ongoing</span><br />{% endif %}<h4><strong>Owner:</strong> <a href="{{ cached_owner_url }}">{{ project.cached_owner_name }}</a></h4>
+                        <p>{% if project.ongoing %}<span class="label warning ongoing">Ongoing</span><br />{% endif %}<h4><strong>Owner:</strong> <a href="{{ project.owner_url }}">{{ project.owner_name }}</a></h4>
                         <strong>Technology:</strong> {{ project.technology }}<br />
                         <strong>Started:</strong> {{ project.start_dt|date:"n/j/Y" }}</p>
                         

@@ -58,17 +58,15 @@ def get_profile_change_message(old=None, new=None):
         'phone',
         'title',
         'role',
-        'team',
+        'team_id',
         'team_leader',
-        'client',
+        'client_id',
     )
     return get_change_message(old, new, fields)
 
 def cache_item(value, key=None):
     if key:
-        is_set = cache.add(key, value)
-        if not is_set:
-            cache.set(key, value)
+        cache.set(key, value)
         return cache.get(key)
     return None
 
