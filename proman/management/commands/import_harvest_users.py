@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from django.core.cache import cache
 from django.utils import timezone
 
 from proman.models import Profile, Team, ContentImport
@@ -21,8 +22,10 @@ class Command(BaseCommand):
             ci = get_object_or_404(ContentImport, pk=content_import_pk)
         data = Harvest().users()
         if data:
-            ci.estimated_total = len(data)
-            ci.save()
+            if ci:
+                cache.set(('content_import.total.%s') % ci.pk, len(data))
+                cache.set(('content_import.matched.%s') % ci.pk, 0)
+                cache.set(('content_import.added.%s') % ci.pk, 0)
             print "Receiving data..."
             for d in data:
                 u = d['user']
@@ -30,8 +33,7 @@ class Command(BaseCommand):
                     # try to get the user
                     match = User.objects.get(email=u['email'])
                     if ci:
-                        ci.matched += 1
-                        ci.save()
+                        cache.incr(('content_import.matched.%s') % ci.pk)
                     print "MATCH!!! ", match
                 except:
                     # get team name from department
@@ -64,10 +66,13 @@ class Command(BaseCommand):
                         team[0].leader = user
                         team[0].save()
                     if ci:
-                        ci.added += 1
-                        ci.save()
+                        cache.incr(('content_import.added.%s') % ci.pk)
                     total += 1
             print "Done. Added %s of %s Users" % (total, len(data))
         if ci:
             ci.complete_dt = timezone.now()
+            cache.set(('content_import.complete_dt.%s') % ci.pk, ci.complete_dt)
+            ci.matched = cache.get(('content_import.matched.%s') % ci.pk)
+            ci.added = cache.get(('content_import.added.%s') % ci.pk)
+            ci.estimated_total = cache.get(('content_import.total.%s') % ci.pk)
             ci.save()

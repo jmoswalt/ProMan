@@ -60,7 +60,7 @@ class ProjectAdmin(admin.ModelAdmin):
 
 class TaskAdmin(admin.ModelAdmin):
     model = Task
-    list_display = ['title', 'due_dt', 'assignee', 'task_time']
+    list_display = ['title', 'due_dt', 'owner', 'task_time']
     list_filter = ['status']
     form = TaskForm
     
@@ -68,7 +68,7 @@ class TaskAdmin(admin.ModelAdmin):
         (None, {'fields': (
             'title',
             'project',
-            'assignee',
+            'owner',
             'due_dt',
             'description',
             'task_time',

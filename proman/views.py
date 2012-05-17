@@ -16,6 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.http import HttpResponseRedirect, HttpResponse
+from django.core.cache import cache
 from django.core.management import call_command
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
@@ -63,7 +64,7 @@ class UserListView(ListView):
         inactive_employees = context['inactive_employees']
         inactive_pks = [p.pk for p in inactive_employees]
         context['open_projects_inactives'] = Project.objects.filter(version=False, owner_id__in=inactive_pks).exclude(status="done")
-        context['open_tasks_inactives'] = Task.objects.filter(version=False, assignee_id__in=inactive_pks, completed=False)
+        context['open_tasks_inactives'] = Task.objects.filter(version=False, owner_id__in=inactive_pks, completed=False)
         return context
 
 class ContactListView(UserListView):
@@ -178,15 +179,15 @@ class UserDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(UserDetailView, self).get_context_data(**kwargs)
         #TODO: Move all of these contexts into methods for the Profile object
-        context['user_open_project_tasks'] = Task.objects.filter(version=False, assignee=context['profile_object']).exclude(completed=True).order_by('due_dt')
-        context['user_done_project_tasks'] = Task.objects.filter(version=False, assignee=context['profile_object'], completed=True).order_by('due_dt')
+        context['user_open_project_tasks'] = Task.originals.owner_id(context['profile_object'].pk).exclude(completed=True).order_by('due_dt')
+        context['user_done_project_tasks'] = Task.objects.filter(version=False, owner=context['profile_object'], completed=True).order_by('due_dt')
 
         context['user_project_tasks_hours'] = context['user_open_project_tasks'].aggregate(total=Sum('task_time'))
 
-        context['project_tasks_not_started'] = Task.objects.filter(version=False, assignee=context['profile_object'], completed=False).order_by('due_dt')
+        context['project_tasks_not_started'] = Task.objects.filter(version=False, owner=context['profile_object'], completed=False).order_by('due_dt')
         context['project_tasks_not_started_hours'] = context['project_tasks_not_started'].aggregate(total=Sum('task_time'))
 
-        context['project_tasks_done'] = Task.objects.filter(version=False, assignee=context['profile_object'], completed=True).order_by('due_dt')
+        context['project_tasks_done'] = Task.objects.filter(version=False, owner=context['profile_object'], completed=True).order_by('due_dt')
         context['project_tasks_done_hours'] = context['project_tasks_done'].aggregate(total=Sum('task_time'))
         
         context['user_projects'] = Project.objects.filter(version=False, owner=context['profile_object']).order_by('-status', 'start_dt')
@@ -237,7 +238,7 @@ class TaskCreateView(CreateView):
     Creates a Task
     """
     form_class = TaskForm
-    template_name = "proman/task_create.html"
+    template_name = "proman/task_update.html"
     success_url = '/projects/'
 
     @method_decorator(login_required)
@@ -248,7 +249,7 @@ class TaskCreateView(CreateView):
         super(TaskCreateView, self).get_initial()
         project = self.request.GET.get("project")
         user = self.request.user
-        self.initial = {"assignee":user.id, "project":project, "due_dt": DUE_DT_INITIAL}
+        self.initial = {"owner":user.id, "project":project, "due_dt": DUE_DT_INITIAL}
         return self.initial
     
     def form_valid(self, form):
@@ -322,9 +323,9 @@ class TaskUpdateView(UpdateView):
             action_flag     = action_flag,
             change_message  = change_message
         )
-#         if self.request.user != self.object.assignee and new_obj.assignee != self.object.assignee:
-#             # If you aren't changing to yourself, and the assignee changed, send them an email.
-#             send_mail('[PM] Task Assigned %s' % self.object.title, "You've just been assigned the following task from %s: <br />%s (Link: %s%s)<br /><br /> %s<br /><br />" % (self.request.user.username, self.object.title, settings.SITE_URL, self.object.get_absolute_url(), self.object.description), self.request.user.email, [self.object.assignee.email], fail_silently=False)
+#         if self.request.user != self.object.owner and new_obj.owner != self.object.owner:
+#             # If you aren't changing to yourself, and the owner changed, send them an email.
+#             send_mail('[PM] Task Assigned %s' % self.object.title, "You've just been assigned the following task from %s: <br />%s (Link: %s%s)<br /><br /> %s<br /><br />" % (self.request.user.username, self.object.title, settings.SITE_URL, self.object.get_absolute_url(), self.object.description), self.request.user.email, [self.object.owner.email], fail_silently=False)
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -374,7 +375,7 @@ class ProjectCreateView(CreateView):
     Creates a Project
     """
     form_class = ProjectForm
-    template_name = "proman/project_create.html"
+    template_name = "proman/project_update.html"
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -516,7 +517,7 @@ class ProjectDetailView(DetailView):
         project = self.object.pk
         user = self.request.user
         form = TaskMiniForm()
-        form.fields['assignee'].initial = user.profile.id
+        form.fields['owner'].initial = user.profile.id
         form.fields['project'].initial = project
         form.fields['due_dt'].initial = DUE_DT_INITIAL
         context = super(ProjectDetailView, self).get_context_data(**kwargs)
@@ -558,8 +559,11 @@ def import_check(request, pk=None, template_name="proman/import_check.html"):
     div in a template to be reformatted and displayed by javascript
     """
     if pk:
-        ci = get_object_or_404(ContentImport, pk=pk)
+        matched = cache.get(('content_import.matched.%s') % pk)
+        added = cache.get(('content_import.added.%s') % pk)
+        total = cache.get(('content_import.total.%s') % pk)
+        complete_dt = cache.get(('content_import.complete_dt.%s') % pk)
         perc = 0
-        if ci.estimated_total > 0:
-            perc = int(round((ci.matched + ci.added)*100/ci.estimated_total))
+        if total > 0:
+            perc = int(round((matched + added)*100/total))
     return render_to_response(template_name, locals(), context_instance=RequestContext(request))

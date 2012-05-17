@@ -8,6 +8,7 @@
 
 {% block css %}
 {{ block.super }}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/chosen.css"/>
 <style>
 h1 small a { font-size: 13px; text-decoration: underline; }
     .log-field { font-weight: bold; }
@@ -26,7 +27,7 @@ tr.stuck { background-color: #FEE9CC; }
 .activity .glyph { width: 26px; float: left; font-size: 16px; }
 .activity p {width: 224px; }
 .project-stats h1 {font-size: 42px; }
-#project-status {font-size: 22px; padding: 6px; }
+#project-status {font-size: 12px; padding: 2px 4px; margin-top: -2px; }
 .ongoing {font-size: 14px;  padding: 3px 5px;}
 
 </style>
@@ -35,7 +36,7 @@ tr.stuck { background-color: #FEE9CC; }
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ project.client_name }} <small>{{ project.name }}  <a class="colorize danger" href="{% url project_update project.pk %}">Edit</a></small><span id="project-status" class="pull-right label {{ project.status_class }}">{{ project.status }}</span></h1>
+        <h1>{{ project.client_name }} <small>{{ project.name }} </small> <span id="project-status" class="label {{ project.status_class }}">{{ project.status }}</span> <a class="btn pull-right primary" href="{% url project_update project.pk %}">Edit Project</a></span></h1>
     </div>
     <div class="page-header">
         <div class="row">
@@ -146,8 +147,11 @@ tr.stuck { background-color: #FEE9CC; }
 {% block js %}
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.17.custom.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.tablesorter.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function(){ 
+    $("#id_owner").addClass('chzn-select');
+    $("#id_owner").chosen();
     if ($("#task-list-done tbody").children().length > 0) {
         $("#task-list-done").tablesorter({
             sortList: [[2,1]],

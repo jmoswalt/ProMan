@@ -40,19 +40,19 @@
                 </tr>
                 </thead>
                 <tbody>
-            {% for u in active_employees %}
+            {% for p in active_employees %}
                 <tr class="project-row">
-                    <td><a href="{% url user_detail_pk u.user_id %}">{{ u.nice_name}}</a></td>
-                    <td>{{ u.open_projects }}</td>
-                    <td>{{ u.done_projects }}</td>
-                    <td>{{ u.total_open_tasks.num_tasks }}</td>
-                    <td>{{ u.week_due_tasks.num_tasks }}</td>
-                    <td>{{ u.week_done_tasks.num_tasks }}</td>
-                    <td>{{ u.velocity_tasks.num_tasks }}</td>
-                    <td>{% firstof u.total_open_tasks.total_hours|floatformat "0" %}</td>
-                    <td>{% firstof u.week_due_tasks.total_hours|floatformat "0" %}</td>
-                    <td>{% firstof u.week_done_tasks.total_hours|floatformat "0" %}</td>
-                    <td>{% firstof u.velocity_tasks.total_hours|floatformat "0" %}</td>
+                    <td><a href="{% url user_detail_pk p.user_id %}">{{ p.nice_name}}</a></td>
+                    <td>{{ p.project_data.open|length }}</td>
+                    <td>{{ p.project_data.done|length }}</td>
+                    <td>{{ p.task_data.open_tasks|length }}</td>
+                    <td>{{ p.task_data.week_due_tasks|length }}</td>
+                    <td>{{ p.task_data.week_done_tasks|length }}</td>
+                    <td>{% firstof p.task_data.velocity_tasks_count|floatformat "0" %}</td>
+                    <td>{% firstof p.task_data.open_task_hours|floatformat "0" %}</td>
+                    <td>{% firstof p.task_data.week_due_task_hours|floatformat "0" %}</td>
+                    <td>{% firstof p.task_data.week_done_task_hours|floatformat "0" %}</td>
+                    <td>{% firstof p.task_data.velocity_task_hours|floatformat "0" %}</td>
                 </tr>
             {% endfor %}
                 </tbody>
@@ -84,19 +84,19 @@
                 </tr>
                 </thead>
                 <tbody>
-            {% for u in inactive_employees %}
+            {% for p in inactive_employees %}
                 <tr class="project-row">
-                    <td><a href="{% url user_detail_pk u.user_id %}">{{ u.nice_name}}</a></td>
-                    <td>{{ u.open_projects }}</td>
-                    <td>{{ u.done_projects }}</td>
-                    <td>{{ u.total_open_tasks.num_tasks }}</td>
-                    <td>{{ u.week_due_tasks.num_tasks }}</td>
-                    <td>{{ u.week_done_tasks.num_tasks }}</td>
-                    <td>{{ u.velocity_tasks.num_tasks }}</td>
-                    <td>{% firstof u.total_open_tasks.total_hours|floatformat "0" %}</td>
-                    <td>{% firstof u.week_due_tasks.total_hours|floatformat "0" %}</td>
-                    <td>{% firstof u.week_done_tasks.total_hours|floatformat "0" %}</td>
-                    <td>{% firstof u.velocity_tasks.total_hours|floatformat "0" %}</td>
+                    <td><a href="{% url user_detail_pk p.user_id %}">{{ p.nice_name}}</a></td>
+                    <td>{{ p.project_data.open|length }}</td>
+                    <td>{{ p.project_data.done|length }}</td>
+                    <td>{{ p.task_data.open_tasks|length }}</td>
+                    <td>{{ p.task_data.week_due_tasks|length }}</td>
+                    <td>{{ p.task_data.week_done_tasks|length }}</td>
+                    <td>{% firstof p.task_data.velocity_tasks_count|floatformat "0" %}</td>
+                    <td>{% firstof p.task_data.open_task_hours|floatformat "0" %}</td>
+                    <td>{% firstof p.task_data.week_due_task_hours|floatformat "0" %}</td>
+                    <td>{% firstof p.task_data.week_done_task_hours|floatformat "0" %}</td>
+                    <td>{% firstof p.task_data.velocity_task_hours|floatformat "0" %}</td>
                 </tr>
             {% endfor %}
                 </tbody>

@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Update a Project{% endblock title %}
+{% block title %}{% if project %}Update Project for {{ project }}{% else %}Create a Project{% endif %}{% endblock title %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/chosen.css"/>
+{% endblock %}
 
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>Update Project</h1>
+        <h1>{% if project %}Update Project for {{ project }}{% else %}Create a Project{% endif %}</h1>
     </div>
     <div class="page-header">
         <div class="row">
@@ -23,7 +27,7 @@
                 </div>
                 {% endfor %}
                 <div class="form-actions">
-                    <button type="submit" class="btn success">Save changes to Project</button>
+                    <button type="submit" class="btn success">Save this Project</button>
                     <button type="reset" class="btn">Cancel</button>
                 </div>
             </form>
@@ -37,8 +41,11 @@
 
 {% block js %}
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.17.custom.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function() { 
+    $("#id_owner").addClass('chzn-select');
+    $("#id_owner").chosen();
     $( "#id_start_dt" ).datepicker();
     $( "#id_end_dt" ).datepicker();
 });

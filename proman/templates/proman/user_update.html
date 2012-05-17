@@ -2,6 +2,10 @@
 
 {% block title %}{% if profile %}Update Profile for {{ profile }}{% else %}Create a Profile{% endif %}{% endblock title %}
 
+{% block css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/chosen.css"/>
+{% endblock %}
+
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
@@ -35,6 +39,7 @@
 {% endblock body %}
 
 {% block js %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
 <script type="text/javascript">
 
 function teamClient() {
@@ -48,6 +53,8 @@ function teamClient() {
 
 $(document).ready(function() { 
     teamClient();
+    $("#id_team").addClass('chzn-select');
+    $("#id_team").chosen();
 });
 
 $('#id_role').on('change', function() {

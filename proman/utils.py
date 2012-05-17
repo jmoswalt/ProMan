@@ -24,7 +24,7 @@ def get_task_change_message(old=None, new=None):
     fields = (
         'title',
         'description',
-        'assignee_id',
+        'owner_id',
         'due_dt',
         'task_time',
         'completed',

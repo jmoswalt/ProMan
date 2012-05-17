@@ -15,7 +15,7 @@
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ task.title }} <small>{% if not task.completed %}Est: {% endif %}<strong></strong>{{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</strong> &mdash; {% if task.completed %}Done {{ task.completed_dt|naturaltime }}{% else %}Due: <strong>{{ task.due_dt|naturaltime }}</strong>{% endif %}</small></h1>
+        <h1>{{ task.title }} <small>{% if not task.completed %}Est: {% endif %}<strong></strong>{{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</strong> &mdash; {% if task.completed %}Done {{ task.completed_dt|naturaltime }}{% else %}Due: <strong>{{ task.due_dt|naturaltime }}</strong>{% endif %}</small> <a href="{% url task_update task.pk %}" class="btn primary pull-right">Edit Task</a></h1>
     </div>
     <div class="row">
         {% include "messages.html" %}
@@ -27,6 +27,9 @@
             </div>
             {% endif %}
             <div>{{ task.description|safe|linebreaks }}</div>
+            {% if not task.completed %}
+            <p><a href="#close-form-modal" data-toggle="modal" class="btn success">Close Task</a></p>
+            {% endif %}
             {% if task.resolution and task.completed %}
             <div class="alert alert-block alert-success">
                 <h4 class="alert-heading">This task has been closed.</h4>
@@ -39,7 +42,7 @@
             </div>
         </div>
         <div class="span4">
-            <p><strong>Assigned to:</strong> <a href="{% url user_detail task.assignee.user.username %}">{{ task.assignee.abbr_name }}</a><br />
+            <p><strong>Assigned to:</strong> <a href="{% url user_detail task.owner.user.username %}">{{ task.owner.abbr_name }}</a><br />
             <strong>Due Date:</strong> <span class="colorize{% if task.completed %} {{ task.due_class }}{% endif %}">{{ task.due_dt|date:"l, n/j" }}</span><br />
             <strong>Status:</strong> {{ task.status }}<br />
             
@@ -48,9 +51,7 @@
             {% else %}
                 <span class="label important">Non-Billable</span>
             {% endif %}</p>
-            <p><a href="{% url task_update task.pk %}" class="btn primary">Edit Task</a>
-            <a href="#close-form-modal" data-toggle="modal" class="btn success">Close Task</a></p>
-            <h2>Project Info</h2>
+                        <h2>Project Info</h2>
             <h3><a href="{% url project_detail task.project.pk %}">{{ task.project.name }}</a></h3><p>
             <strong>Owner:</strong> <a href="{% url user_detail task.project.owner.user.username %}">{{ task.project.owner.abbr_name }}</a><br />
             <strong>Technology:</strong> {{ task.project.technology }}<br />

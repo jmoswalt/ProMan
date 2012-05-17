@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
@@ -22,8 +23,9 @@ class Command(BaseCommand):
         data = Harvest().clients()
         if data:
             if ci:
-                ci.estimated_total = len(data)
-                ci.save()
+                cache.set(('content_import.total.%s') % ci.pk, len(data))
+                cache.set(('content_import.matched.%s') % ci.pk, 0)
+                cache.set(('content_import.added.%s') % ci.pk, 0)
             print "Receiving data..."
             for d in data:
                 c = d['client']
@@ -35,8 +37,7 @@ class Command(BaseCommand):
                     )
                     match = Client.objects.get(id=tp.object_id)
                     if ci:
-                        ci.matched += 1
-                        ci.save()
+                        cache.incr(('content_import.matched.%s') % ci.pk)
                     print "MATCH!!! ", match
                 except:
                     details = c['details']
@@ -52,10 +53,13 @@ class Command(BaseCommand):
                         service_item_value=c['id'],
                     )
                     if ci:
-                        ci.added += 1
-                        ci.save()
+                        cache.incr(('content_import.added.%s') % ci.pk)
                     total += 1
             print "Done. Added %s of %s Clients" % (total, len(data))
         if ci:
             ci.complete_dt = timezone.now()
+            cache.set(('content_import.complete_dt.%s') % ci.pk, ci.complete_dt)
+            ci.matched = cache.get(('content_import.matched.%s') % ci.pk)
+            ci.added = cache.get(('content_import.added.%s') % ci.pk)
+            ci.estimated_total = cache.get(('content_import.total.%s') % ci.pk)
             ci.save()

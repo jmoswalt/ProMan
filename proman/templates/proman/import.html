@@ -7,15 +7,16 @@
     </div>
 </div>
 <div class="span4">
-    <div class="progress info striped active">
-        <div class="bar"></div>
+    <div class="progress {% if ci.complete_dt %}success {% else %}info striped active{% endif %}">
+        <div class="bar" {% if ci.complete_dt %}style="width: 100%;"{% endif %}></div>
     </div>
-    <div id="status">Connecting... <span id="started"></span> <span id="completed"></span></div>
-    <div id="final-results"></div>
+    <div id="status">Connecting... <span id="started"></span> <span id="completed">{% if ci.complete_dt %}Complete!{% endif %}</span></div>
+    <div id="final-results">{% if ci.complete_dt %}{{ ci.matched }} Matched, {{ ci.added }} Added{% endif %}</div>
     <div id="hidden-results"></div>
 </div>
 {% endblock %}
 {% block js %}
+{% if not ci.complete_dt %}
 <script type="text/javascript">
 function importCheck() {
     $.ajax({
@@ -43,6 +44,6 @@ var import_check = setInterval(function() {
         importCheck();
     }
 },500);
-
 </script>
+{% endif %}
 {% endblock js %}

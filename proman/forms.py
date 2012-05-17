@@ -18,7 +18,7 @@ class TaskForm(forms.ModelForm):
         fields = (
             'title',
             'project',
-            'assignee',
+            'owner',
             'due_dt',
             'description',
             'task_time',
@@ -53,7 +53,7 @@ class TaskForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(TaskForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(version=False)
-        self.fields['assignee'].queryset = Profile.objects.filter(role="employee", user__is_active=True)
+        self.fields['owner'].queryset = Profile.objects.filter(role="employee", user__is_active=True)
 
 class ProjectForm(forms.ModelForm):
     start_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="Start Date")
@@ -125,9 +125,8 @@ class TaskMiniForm(forms.ModelForm):
             'title',
             'due_dt',
             'task_time',
+            'owner',
             'description',
-            'billable',
-            'assignee',
             'project',
         )
 
@@ -145,7 +144,7 @@ class TaskMiniForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(TaskMiniForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(version=False)
-        self.fields['assignee'].queryset = Profile.objects.filter(role="employee", user__is_active=True)
+        self.fields['owner'].queryset = Profile.objects.filter(role="employee", user__is_active=True)
 
 class TaskCloseForm(forms.ModelForm):
     completed = forms.BooleanField(widget=forms.HiddenInput, required=False)

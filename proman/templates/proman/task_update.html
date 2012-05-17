@@ -1,18 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}Update a Task{% endblock title %}
+{% block title %}{% if task %}Update Task for {{ task }}{% else %}Create a Task{% endif %}{% endblock title %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/chosen.css"/>
+{% endblock %}
 
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>Update a Task <small>{{ task.title }}</small></h1>
+        <h1>{% if task %}Update Task for {{ task }}{% else %}Create a Task{% endif %}</h1>
     </div>
     <div class="page-header">
         <div class="row">
         {% include "messages.html" %}
             <div class="span8">
              <form method="post" action="" class="form-horizontal">{% csrf_token %}
-                <legend>Update a task</legend>
                 {% for field in form %}
                 <div class="control-group">
                     <label class="control-label" for="{{ field.label }}">{{ field.label }}</label>
@@ -23,7 +26,7 @@
                 </div>
                 {% endfor %}
                 <div class="form-actions">
-                    <button type="submit" class="btn success">Save changes</button>
+                    <button type="submit" class="btn success">Save this Task</button>
                     <button type="reset" class="btn">Cancel</button>
                 </div>
             </form>
@@ -37,8 +40,11 @@
 
 {% block js %}
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.17.custom.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function() { 
+    $("#id_owner, #id_project").addClass('chzn-select');
+    $(".chzn-select").chosen();
     $( "#id_due_dt, #id_completed_dt" ).datepicker();
 });
 </script>

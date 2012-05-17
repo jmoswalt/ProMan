@@ -1,5 +1,5 @@
 from decimal import Decimal
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 from math import sqrt
 
 from django.db import models
@@ -13,6 +13,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
+from proman.managers import ProjectManager, TaskManager
 from proman.utils import cache_item
 
 HOURLY_RATE = 125
@@ -35,8 +36,11 @@ class Client(models.Model):
         return self.name
 
 
-MONDAY = timezone.now() - timedelta(days=timezone.now().weekday())
-SUNDAY = timezone.now() + timedelta(days=(6 - timezone.now().weekday()))
+MONDAY_N = datetime.combine(timezone.now().date(), time()) - timedelta(days=timezone.now().weekday())
+SUNDAY_N = datetime.combine(timezone.now().date(), time()) + timedelta(days=(6 - timezone.now().weekday()))
+MONDAY = timezone.make_aware(MONDAY_N, timezone.utc)
+SUNDAY = timezone.make_aware(SUNDAY_N, timezone.utc)
+SUNDAY_STR = str(SUNDAY).replace(" ", "_")
 
 PROFILE_ROLE_CHOICES = (
     ('employee','Employee'),
@@ -68,7 +72,7 @@ class Profile(models.Model):
         cached = cache.get(cache_key)
         if cached is None:
             cached = ('user_detail', [self.user.username])
-            cache.add(cache_key, cached)
+            cache.set(cache_key, cached)
         return cached
 
     def nice_name(self):
@@ -81,7 +85,7 @@ class Profile(models.Model):
             cached = cache.get(cache_key)
             if cached is None:
                 cached = self.user.username
-                cache.add(cache_key, cached)
+                cache.set(cache_key, cached)
             return cached
 
     def abbr_name(self):
@@ -93,7 +97,7 @@ class Profile(models.Model):
             cached = cache.get(cache_key)
             if cached is None:
                 cached = self.user.username
-                cache.add(cache_key, cached)
+                cache.set(cache_key, cached)
             return cached
 
     def client_name(self):
@@ -103,97 +107,125 @@ class Profile(models.Model):
             cached = cache.get(cache_key)
             if cached is None:
                 cached = self.client.name
-                cache.add(cache_key, cached)
+                cache.set(cache_key, cached)
             return cached
         return ""
 
-    def _open_projects(self):
-         projects = Project.objects.filter(version=False, owner_id=self.user_id).exclude(status="done").count()
-         return projects
+    ###########################
+    # Project Related Methods #
+    ###########################
 
-    def open_projects(self):
-        key = "profile.open_projects"
+    def _projects(self):
+        key = "profile.projects"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self._open_projects()
-            print self.pk, cached
-            cache.add(cache_key, cached)
+            cached = Project.originals.owner_id(self.pk)
+            cache.set(cache_key, cached)
         return cached
 
-    def _done_projects(self):
-        projects = Project.objects.filter(version=False, owner_id=self.user_id, status="done").count()
-        return projects
+    def _project_data(self):
+        output = {
+            'open': [],
+            'done': [],
+            'open_task_budget': 0,
+            'done_task_budget': 0,
+        }
+        for p in self._projects():
+            if p.status != "Done":
+                output['open'].append(p)
+                output['open_task_budget'] += p.task_budget
+            else:
+                output['done'].append(p)
+                output['done_task_budget'] += p.task_budget
+        return output
 
-    def done_projects(self):
-        key = "profile.done_projects"
+    def project_data(self):
+        key = "profile.project_data"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self._done_projects()
-            cache.add(cache_key, cached)
+            cached = self._project_data()
+            cache.set(cache_key, cached)
         return cached
 
-    def _total_open_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee=self.user).exclude(completed=True).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
-        return tasks
+    ########################
+    # Task Related Methods #
+    ########################
 
-    def total_open_tasks(self):
-        key = "profile.total_open_tasks"
+    def _tasks(self):
+        """
+        Cached queryset of tasks owned by this profile.
+        This is cleared on signals for pre_save, post_save, and 
+        delete of any task where this person is or was the 
+        previous owner.
+        """
+        key = "profile.tasks"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self._total_open_tasks()
-            cache.add(cache_key, cached)
+            cached = Task.originals.owner_id(self.pk).order_by('due_dt')
+            cache.set(cache_key, cached)
         return cached
 
-    def _velocity_tasks(self):
-        today = SUNDAY - timedelta(weeks=1)
+    def _task_data(self):
+        """
+        Build the data involving tasks for this profile.
+        We build a dictionary of these items and then cache this
+        to avoid the expensive queries and calculations.
+        """
+        output = {
+            'open_tasks': [],
+            'open_task_hours': 0,
+            'week_done_tasks': [],
+            'week_done_task_hours': 0,
+            'week_due_tasks': [],
+            'week_due_task_hours': 0,
+            'velocity_tasks': [],
+            'velocity_task_hours': 0,
+            'velocity_task_count': 0,
+        }
+
+        last_sunday = SUNDAY - timedelta(weeks=1)
         three_weeks_ago = MONDAY - timedelta(weeks=4)
-        tasks = Task.objects.filter(version=False, assignee_id=self.user_id, completed=True, due_dt__gte=three_weeks_ago, due_dt__lte=today).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
-        if tasks['total_hours'] > 0:
-            tasks['total_hours'] = round(tasks['total_hours']/3,2)
-        if tasks['num_tasks'] > 0:
-            tasks['num_tasks'] = round(Decimal(tasks['num_tasks'])/3,2)
-        return tasks
 
-    def velocity_tasks(self):
-        key = "profile.velocity_tasks"
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
+        for t in self._tasks():
+            # process open tasks
+            if not t.completed:
+                output['open_tasks'].append(t)
+                output['open_task_hours'] += t.task_time
+
+            # Process done tasks
+            else:
+                if t.completed_dt >= three_weeks_ago and t.completed_dt <= last_sunday:
+                    output['velocity_tasks'].append(t)
+                    output['velocity_task_hours'] += t.task_time
+
+            if t.due_dt >= MONDAY and t.due_dt <= SUNDAY:
+                output['week_due_tasks'].append(t)
+                output['week_due_task_hours'] += t.task_time
+
+            if t.completed and t.completed_dt >= MONDAY and t.completed_dt <= SUNDAY:
+                output['week_done_tasks'].append(t)
+                output['week_done_task_hours'] += t.task_time
+
+        # Extra calcs for the velocity
+        output['velocity_task_count'] = len(output['velocity_tasks'])
+
+        if output['velocity_task_hours'] > 0:
+            output['velocity_task_hours'] = round(output['velocity_task_hours']/3,2)
+        if output['velocity_task_count'] > 0:
+            output['velocity_task_count'] = round(Decimal(output['velocity_task_count'])/3,2)
+
+        return output
+
+    def task_data(self):
+        key = "profile.task_data"
+        cache_key = "%s.%s.%s.%s" % (settings.SITE_CACHE_KEY, key, SUNDAY_STR, self.id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self._velocity_tasks()
-            if cached is None:
-                cached = []
-            cache.add(cache_key, cached)
-        return cached
-
-    def _week_due_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee_id=self.user_id, due_dt__gte=MONDAY, due_dt__lte=SUNDAY).exclude(completed=True).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
-        return tasks
-
-    def week_due_tasks(self):
-        key = "profile.week_due_tasks"
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
-        cached = cache.get(cache_key)
-        if cached is None:
-            cached = self._week_due_tasks()
-            if cached is None:
-                cached = []
-            cache.add(cache_key, cached)
-        return cached
-
-    def _week_done_tasks(self):
-        tasks = Task.objects.filter(version=False, assignee_id=self.user_id, completed=True, completed_dt__gte=MONDAY, completed_dt__lte=SUNDAY).aggregate(total_hours=Sum('task_time'), num_tasks=Count('pk'))
-        return tasks
-
-    def week_done_tasks(self):
-        key = "profile.week_done_tasks"
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
-        cached = cache.get(cache_key)
-        if cached is None:
-            cached = self._week_done_tasks()
-            cache.add(cache_key, cached)
+            cached = self._task_data()
+            cache.set(cache_key, cached)
         return cached
 
 
@@ -247,6 +279,9 @@ class Project(models.Model):
     original = models.ForeignKey('self', null=True, related_name='project_original')
     version = models.BooleanField(default=False, db_index=True)
 
+    objects = models.Manager()
+    originals = ProjectManager()
+
     def __unicode__(self):
         return self.name
 
@@ -273,7 +308,7 @@ class Project(models.Model):
             cached = LogEntry.objects.filter(content_type=ContentType.objects.get(model='task'), action_flag__in=[1,5,6], object_id__in=task_pks).order_by('-action_time')[:6]
             if cached is None:
                 cached = []
-            cache.add(cache_key, cached)
+            cache.set(cache_key, cached)
         return cached
 
     def tasks(self):
@@ -284,7 +319,7 @@ class Project(models.Model):
             cached = self.task_set.filter(version=False).order_by('due_dt')
             if cached is None:
                 cached = []
-            cache.add(cache_key, cached)
+            cache.set(cache_key, cached)
         return cached
 
     def tasks_count(self):
@@ -308,7 +343,7 @@ class Project(models.Model):
         cached = cache.get(cache_key)
         if cached is None:
             cached = self.tasks().filter(completed=True).order_by('due_dt')
-            cache.add(cache_key, cached)
+            cache.set(cache_key, cached)
         return cached
 
     def tasks_done_hours(self):
@@ -332,7 +367,7 @@ class Project(models.Model):
         cached = cache.get(cache_key)
         if cached is None:
             cached = self.tasks().filter(completed=False).order_by('due_dt')
-            cache.add(cache_key, cached)
+            cache.set(cache_key, cached)
         return cached
 
     def tasks_not_done_hours(self):
@@ -456,7 +491,7 @@ class Project(models.Model):
             cached = harvest_match.service_item_value
             if cached is None:
                 cached = []
-            cache.add(cache_key, cached)
+            cache.set(cache_key, cached)
         return cached
 
     def harvest_budget_spent(self):
@@ -465,19 +500,22 @@ class Project(models.Model):
             keys = [settings.SITE_CACHE_KEY, str('harvest_budget_spent'), str(self.id), NOW_STR]
             key = '.'.join(keys)
             if cache.get(key) is None:
-                from proman.harvest import Harvest
-                entries = Harvest().project_entries(
-                    hpi,
-                    datetime.strftime(self.start_dt, "%Y%m%d"),
-                    NOW_STR,
-                    "yes"
-                    )
-                hours = 0
-                if entries:
-                    for d in entries:
-                        for e in d.itervalues():
-                            hours = hours + float(e['hours'])
-                value = int(round(hours*HOURLY_RATE))
+                try:
+                    from proman.harvest import Harvest
+                    entries = Harvest().project_entries(
+                        hpi,
+                        datetime.strftime(self.start_dt, "%Y%m%d"),
+                        NOW_STR,
+                        "yes"
+                        )
+                    hours = 0
+                    if entries:
+                        for d in entries:
+                            for e in d.itervalues():
+                                hours = hours + float(e['hours'])
+                    value = int(round(hours*HOURLY_RATE))
+                except:
+                    value = 0
                 cache_item(value, key)
             return cache.get(key)
         return None
@@ -488,7 +526,7 @@ class Project(models.Model):
         cached = cache.get(cache_key)
         if cached is None:
             cached = self.owner.get_absolute_url()
-            cache.add(cache_key, cached)
+            cache.set(cache_key, cached)
         return cached
 
     def owner_name(self):
@@ -497,7 +535,7 @@ class Project(models.Model):
         cached = cache.get(cache_key)
         if cached is None:
             cached = self.owner.abbr_name()
-            cache.add(cache_key, cached)
+            cache.set(cache_key, cached)
         return cached
 
     def client_name(self):
@@ -509,7 +547,7 @@ class Project(models.Model):
                 cached = self.client.name
             else:
                 cached = ""
-            cache.add(cache_key, cached)
+            cache.set(cache_key, cached)
         return cached
 
 TASK_TIME_CHOICES = (
@@ -537,7 +575,7 @@ class Task(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     project = models.ForeignKey(Project)
-    assignee = models.ForeignKey(Profile, related_name="assignee", verbose_name="Assign to")
+    owner = models.ForeignKey(Profile, related_name="task_owner", verbose_name="Owner")
     due_dt = models.DateTimeField(_('Due Date'), blank=True, null=True)
     completed_dt = models.DateTimeField(_('Completion Date'), blank=True, null=True)
     task_time = models.DecimalField(_("Time"), max_digits=5, decimal_places=2, choices=TASK_TIME_CHOICES, default='1.00')
@@ -555,6 +593,9 @@ class Task(models.Model):
     update_dt = models.DateTimeField(auto_now=True)
     original = models.ForeignKey('self', related_name='task_original', null=True)
     version = models.BooleanField(default=False, db_index=True)
+
+    objects = models.Manager()
+    originals = TaskManager()
 
     def __unicode__(self):
         return self.title
@@ -588,22 +629,22 @@ class Task(models.Model):
 
         return dc
 
-    def assignee_url(self):
+    def owner_url(self):
         key = "profile.get_absolute_url"
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.assignee_id) 
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.owner_id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self.assignee.get_absolute_url()
-            cache.add(cache_key, cached)
+            cached = self.owner.get_absolute_url()
+            cache.set(cache_key, cached)
         return cached
 
-    def assignee_name(self):
+    def owner_name(self):
         key = "profile.abbr_name"
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.assignee_id) 
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.owner_id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self.assignee.abbr_name()
-            cache.add(cache_key, cached)
+            cached = self.owner.abbr_name()
+            cache.set(cache_key, cached)
         return cached
 
 
