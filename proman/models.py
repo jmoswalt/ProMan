@@ -13,13 +13,28 @@ from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
-from proman.managers import ProjectManager, TaskManager
-from proman.utils import cache_item
+from proman.managers import ProjectManager, TaskManager, ProfileManager
 
-HOURLY_RATE = 125
-DEFAULT_RATE = 100
 NOW_STR = datetime.strftime(timezone.now(), "%Y%m%d")
 
+
+class Setting(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.CharField(max_length=100)
+    value = models.TextField(blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+def get_setting(name, default_value=None):
+    try:
+        return Setting.objects.get(name=name).value
+    except:
+        return default_value
+
+
+DEFAULT_RATE = 100
+HOURLY_RATE = get_setting('hourly_rate', DEFAULT_RATE)
 
 class Team(models.Model):
     name = models.CharField(max_length=100)
@@ -42,10 +57,6 @@ MONDAY = timezone.make_aware(MONDAY_N, timezone.utc)
 SUNDAY = timezone.make_aware(SUNDAY_N, timezone.utc)
 SUNDAY_STR = str(SUNDAY).replace(" ", "_")
 
-PROFILE_ROLE_CHOICES = (
-    ('employee','Employee'),
-    ('client','Client'),
-)
 
 class Profile(models.Model):
     """
@@ -57,10 +68,11 @@ class Profile(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=30, blank=True)
     title = models.CharField(max_length=100, blank=True)
-    role = models.CharField(choices=PROFILE_ROLE_CHOICES, max_length=20, default='client') 
     team = models.ForeignKey(Team, related_name="team", null=True, blank=True)
     client = models.ForeignKey(Client, related_name="client", null=True, blank=True)
     team_leader = models.BooleanField(default=False)
+
+    objects = ProfileManager()
 
     def __unicode__(self):
         return self.nice_name()
@@ -111,37 +123,56 @@ class Profile(models.Model):
             return cached
         return ""
 
+    def role(self):
+        key = "profile.role"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.client_id) 
+        cached = cache.get(cache_key)
+        if cached is None:
+            if self.user.is_staff:
+                cached = "staff"
+            else:
+                cached = "client"
+            cache.set(cache_key, cached)
+        return cached
+
     ###########################
     # Project Related Methods #
     ###########################
 
-    def _projects(self):
-        key = "profile.projects"
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
-        cached = cache.get(cache_key)
-        if cached is None:
-            cached = Project.originals.owner_id(self.pk)
-            cache.set(cache_key, cached)
-        return cached
-
     def _project_data(self):
         output = {
+            'all': [],
             'open': [],
             'done': [],
-            'open_task_budget': 0,
+            'tasks': [],
+            'open_task_budget': {
+                'nonongoing': 0,
+                'ongoing': 0,
+                'all': 0,
+                },
             'done_task_budget': 0,
         }
-        for p in self._projects():
+        projects = Project.originals.owner_id(self.id)
+        if self.client:
+            projects = Project.originals.filter(client_id=self.client_id)
+        for p in projects:
+            output['all'].append(p)
+            output['tasks'].append(p.tasks())
+
             if p.status != "Done":
                 output['open'].append(p)
-                output['open_task_budget'] += p.task_budget
+                output['open_task_budget']['all'] += p.budget_dollars()
+                if p.ongoing:
+                    output['open_task_budget']['ongoing'] += p.budget_dollars()
+                else:
+                    output['open_task_budget']['nonongoing'] += p.budget_dollars()
             else:
                 output['done'].append(p)
-                output['done_task_budget'] += p.task_budget
+                output['done_task_budget'] += p.budget_dollars()
         return output
 
-    def project_data(self):
-        key = "profile.project_data"
+    def _projects(self):
+        key = "profile.projects"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
         cached = cache.get(cache_key)
         if cached is None:
@@ -149,24 +180,12 @@ class Profile(models.Model):
             cache.set(cache_key, cached)
         return cached
 
+    def projects(self):
+        return self._projects()
+
     ########################
     # Task Related Methods #
     ########################
-
-    def _tasks(self):
-        """
-        Cached queryset of tasks owned by this profile.
-        This is cleared on signals for pre_save, post_save, and 
-        delete of any task where this person is or was the 
-        previous owner.
-        """
-        key = "profile.tasks"
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
-        cached = cache.get(cache_key)
-        if cached is None:
-            cached = Task.originals.owner_id(self.pk).order_by('due_dt')
-            cache.set(cache_key, cached)
-        return cached
 
     def _task_data(self):
         """
@@ -175,52 +194,61 @@ class Profile(models.Model):
         to avoid the expensive queries and calculations.
         """
         output = {
-            'open_tasks': [],
-            'open_task_hours': 0,
-            'week_done_tasks': [],
-            'week_done_task_hours': 0,
-            'week_due_tasks': [],
-            'week_due_task_hours': 0,
-            'velocity_tasks': [],
-            'velocity_task_hours': 0,
-            'velocity_task_count': 0,
+            'all': [],
+            'open': [],
+            'open_hours': 0,
+            'done': [],
+            'done_hours': 0,
+            'week_done': [],
+            'week_done_hours': 0,
+            'week_due': [],
+            'week_due_hours': 0,
+            'velocity': [],
+            'velocity_hours': 0,
+            'velocity_count': 0,
         }
 
         last_sunday = SUNDAY - timedelta(weeks=1)
         three_weeks_ago = MONDAY - timedelta(weeks=4)
 
-        for t in self._tasks():
+        tasks = Task.originals.owner_id(self.pk).order_by('due_dt')
+        for t in tasks:
+            output['all'].append(t)
             # process open tasks
             if not t.completed:
-                output['open_tasks'].append(t)
-                output['open_task_hours'] += t.task_time
+                output['open'].append(t)
+                output['open_hours'] += t.task_time
 
             # Process done tasks
             else:
+                output['done'].append(t)
+                output['done_hours'] += t.task_time
                 if t.completed_dt >= three_weeks_ago and t.completed_dt <= last_sunday:
-                    output['velocity_tasks'].append(t)
-                    output['velocity_task_hours'] += t.task_time
+                    output['velocity'].append(t)
+                    output['velocity_hours'] += t.task_time
 
             if t.due_dt >= MONDAY and t.due_dt <= SUNDAY:
-                output['week_due_tasks'].append(t)
-                output['week_due_task_hours'] += t.task_time
+                output['week_due'].append(t)
+                output['week_due_hours'] += t.task_time
 
             if t.completed and t.completed_dt >= MONDAY and t.completed_dt <= SUNDAY:
-                output['week_done_tasks'].append(t)
-                output['week_done_task_hours'] += t.task_time
+                output['week_done'].append(t)
+                output['week_done_hours'] += t.task_time
+
+        output['all_hours'] = output['open_hours'] + output['done_hours']
 
         # Extra calcs for the velocity
-        output['velocity_task_count'] = len(output['velocity_tasks'])
+        output['velocity_count'] = len(output['velocity'])
 
-        if output['velocity_task_hours'] > 0:
-            output['velocity_task_hours'] = round(output['velocity_task_hours']/3,2)
-        if output['velocity_task_count'] > 0:
-            output['velocity_task_count'] = round(Decimal(output['velocity_task_count'])/3,2)
+        if output['velocity_hours'] > 0:
+            output['velocity_hours'] = round(output['velocity_hours']/3,2)
+        if output['velocity_count'] > 0:
+            output['velocity_count'] = round(Decimal(output['velocity_count'])/3,2)
 
         return output
 
-    def task_data(self):
-        key = "profile.task_data"
+    def _tasks(self):
+        key = "profile.tasks"
         cache_key = "%s.%s.%s.%s" % (settings.SITE_CACHE_KEY, key, SUNDAY_STR, self.id) 
         cached = cache.get(cache_key)
         if cached is None:
@@ -228,6 +256,8 @@ class Profile(models.Model):
             cache.set(cache_key, cached)
         return cached
 
+    def tasks(self):
+        return self._tasks()
 
 PROJECT_TECHNOLOGY_CHOICES = (
     ('Tendenci','Tendenci'),
@@ -244,9 +274,9 @@ PROJECT_STATUS_CHOICES = (
 
 
 class ContentImport(models.Model):
-    matched = models.IntegerField(default=0)
-    added = models.IntegerField(default=0)
-    estimated_total = models.IntegerField(default=0)
+    matched = models.IntegerField(default=0, null=True)
+    added = models.IntegerField(default=0, null=True)
+    estimated_total = models.IntegerField(default=0, null=True)
     content_type = models.CharField(max_length=100)
     create_dt = models.DateTimeField(null=True)
     complete_dt = models.DateTimeField(null=True)
@@ -311,6 +341,47 @@ class Project(models.Model):
             cache.set(cache_key, cached)
         return cached
 
+    def _task_data(self):
+        """
+        Build the data involving tasks for this profile.
+        We build a dictionary of these items and then cache this
+        to avoid the expensive queries and calculations.
+        """
+        output = {
+            'all': [],
+            'all_hours': 0,
+            'open': [],
+            'open_hours': 0,
+            'done': [],
+            'done_hours': 0,
+        }
+
+        tasks = Task.originals.project_id(self.pk).order_by('due_dt')
+        for t in tasks:
+            # process open tasks
+            if not t.completed:
+                output['open'].append(t)
+                output['open_hours'] += t.task_time
+
+            # Process done tasks
+            else:
+                output['done'].append(t)
+                output['done_hours'] += t.task_time
+
+            # Included in the loop to keep the ordering
+            output['all'].append(t)
+
+        output['all_hours'] = output['open_hours'] + output['done_hours']
+
+        return output
+
+
+
+
+
+
+
+
     def tasks(self):
         key = "project.tasks"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
@@ -332,9 +403,7 @@ class Project(models.Model):
             total = 0
             for i in self.tasks():
                 total += i.task_time
-            print type(total)
             return total
-            #return self.tasks().aggregate(total_time=Sum('task_time'))['total_time']
         return 0
 
     def tasks_done(self):
@@ -351,9 +420,7 @@ class Project(models.Model):
             total = 0
             for i in self.tasks_done():
                 total += i.task_time
-            print type(total)
             return total
-            #return self.tasks_done().aggregate(total_time=Sum('task_time'))['total_time']
         return 0
 
     def tasks_done_count(self):
@@ -516,7 +583,7 @@ class Project(models.Model):
                     value = int(round(hours*HOURLY_RATE))
                 except:
                     value = 0
-                cache_item(value, key)
+                cache.set(key, value)
             return cache.get(key)
         return None
 

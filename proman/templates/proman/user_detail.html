@@ -5,10 +5,16 @@
 
 {% block title %}People: {{ user_object.nice_name }}{% endblock title %}
 
+{% block css %}
+<style>
+h1 .label { font-size: 18px; padding: 2px 4px; }
+</style>
+{% endblock css %}
+
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ profile_object.nice_name }} <small>{{ profile_object.user.username }}</small>  <a class="btn pull-right primary" href="{% url user_update profile_object.pk %}">Edit Person</a></h1>
+        <h1>{{ profile.nice_name }} <span class="label success">{{ profile.role }}</span>  <a class="btn pull-right primary" href="{% url user_update profile.pk %}">Edit Person</a></h1>
     </div>
     <div class="page-header">
     <div class="row">
@@ -18,54 +24,56 @@
                 <input id="project-search" type="text" autocomplete="off" />
                 <span class="help-inline">Start Typing for Live Filtering of <strong>Projects and Tasks</strong></span>
             </form>
-            <h2>Projects <small>(<span id="projects-shown"></span> of {{ user_projects|length }}) | <a href="{% url project_create %}?next={{ request.path }}" class="colorize success">add new</a></small></h2>
-            <table id="project-list" class="table table-striped table-bordered table-condensed project-table">
-                <thead>
-                <tr>
-                    <th class="blue">#</th>
-                    <th class="blue">Name</th>
-                    <th class="blue">Tech</th>
-                    <th class="blue">Age</th>
-                    <th class="blue">Tasks</th>
-                    <th class="blue">Hours</th>
-                    <th class="blue">% Done</th>
-                    <th class="blue">Status</th>
-                    <th>Edit</th>
-                </tr>
-                </thead>
+            <h2>Open Projects <small>(<span id="open-projects-shown"></span> of {{ profile.projects.open|length }}) | <a href="{% url project_create %}?next={{ request.path }}" class="colorize success">add new</a></small></h2>
+            <table id="open-project-list" class="table table-striped table-bordered table-condensed project-table">
+                {% include "proman/profiles/project_table_header.html" %}
                 <tbody>
-            {% for project in user_projects %}
-                <tr class="project-row">
-                    <td>{{ forloop.counter }}</td>
-                    <td><a href="{% url project_detail project.pk %}">{{ project.name }}</a></td>
-                    <td>{{ project.technology }}</td>
-                    <td>{{ project.age }} days</td>
-                    <td>{{ project.task_count }}</td>
-                    <td>{{ project.task_hours }}</td>
-                    <td>{{ project.completion_perc }} %</td>
-                    <td>{{ project.status }}</td>
-                    <td><a class="label info" href="{% url project_update project.pk %}?next={{ request.path }}">Edit</a></td>
-                </tr>
-            {% endfor %}
+                {% include "proman/profiles/project_table_items.html" with projects=profile.projects.open %}
+                </tbody>
+            </table>
+            
+            <h3>Done projects <small>({{ profile.projects.done|length }}) | <a id="show-done-projects" href="javascript:;">Show</a></small></h3>
+            <table id="done-project-list" class="table table-striped table-bordered table-condensed project-table">
+                {% include "proman/profiles/project_table_header.html" %}
+                <tbody>
+                {% include "proman/profiles/project_table_items.html" with projects=profile.projects.done %}
                 </tbody>
             </table>
         </div>
         <div class="span3">
-            <h2><small>Open Projects:</small> {{ user_open_projects|length }}</h2>
-            <h2><small>Managed Tasks:</small> {{ user_open_project_stats.total_tasks }}</h2>
-            <h2><small>Managed Hours:</small> {{ user_open_project_stats.total_task_hours }}</h2>
-            <h3><small>Average Project Start Date:</small><br />{{ user_open_projects|avg_start_date|naturaltime }}</h3>
+            <table class="table table-bordered">
+                <thead>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>Open Projects</td>
+                    <th>{{ profile.projects.open|length }}</th>
+                </tr>
+                <tr>
+                    <td>Releasable Budget</td>
+                    <th>${{ profile.projects.open_task_budget.nonongoing|intcomma }}</th>
+                </tr>
+                <tr>
+                    <td>Ongoing Budget</td>
+                    <th>${{ profile.projects.open_task_budget.ongoing|intcomma }}</th>
+                </tr>
+                <tr>
+                    <td>Managed Hours</td>
+                    <th>?</th>
+                </tr>
+                <tr>
+                    <td>Average Project Start Date</td>
+                    <th>{{ profile.projects.open|avg_start_date|naturaltime }}</th>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
     </div>
     <div class="row">
     <div class="span3 pull-right">
         <h3>Tasks Summary</h3>
-            <h3>Unstarted</h3>
-            <p>{{ project_tasks_not_started|length }} Tasks, {{ project_tasks_not_started_hours.total }} Hours</p>
-            <h3>Done</h3>
-            <p>{{ project_tasks_done|length }} Tasks, {{ project_tasks_done_hours.total }} Hours</p>
-            <table class="table table-striped table-bordered table-condensed">
+            <table class="table table-striped table-bordered">
                 <thead>
                 <tr>
                     <th></th>
@@ -75,15 +83,20 @@
                 </thead>
                 <tbody>
                 <tr>
-                    <th>Unstarted</th>
-                    <td>{{ project_tasks_not_started|length }}</td>
-                    <td>{{ project_tasks_not_started_hours.total }}</td>
+                    <th>Open</th>
+                    <td>{{ profile.tasks.open|length }}</td>
+                    <td>{{ profile.tasks.open_hours }}</td>
+                </tr>
+                <tr>
+                    <th>Done</th>
+                    <td>{{ profile.tasks.done|length }}</td>
+                    <td>{{ profile.tasks.done_hours }}</td>
                 </tr>
                 </tbody>
             </table>
         </div>
         <div class="span9">
-        <h2>Open Tasks <small>(<span id="open-shown"></span> of {{ user_open_project_tasks|length }}) | <a href="{% url task_create %}?next={{ request.path }}" class="colorize success">add new</a></small></h2>
+        <h2>Open Tasks <small>(<span id="open-shown"></span> of {{ profile.tasks.open|length }}) | <a href="{% url task_create %}?next={{ request.path }}" class="colorize success">add new</a></small></h2>
             <table id="open-task-list" class="table table-striped table-bordered table-condensed task-table">
                 <thead>
                 <tr>
@@ -96,13 +109,13 @@
                 </tr>
                 </thead>
                 <tbody id="open-task-results">
-                    {% include "proman/task_table_items.html" with task_items=user_open_project_tasks|slice:results_paginate %}
+                    {% include "proman/task_table_items.html" with task_items=profile.tasks.open|slice:results_paginate %}
                 </tbody>
             </table>
-            {% if user_open_project_tasks|length|add:0 > results_paginate|add:0 %}<a id="more-open-tasks" href="javascript:;">Show More Open Tasks</a>{% endif %}
+            {% if profile.tasks.open|length|add:0 > results_paginate|add:0 %}<a id="more-open-tasks" href="javascript:;">Show More Open Tasks</a>{% endif %}
         </div>
         <div class="span9">
-        <h2>Done Tasks <small>(<span id="done-shown"></span> of {{ user_done_project_tasks|length }})</small></h2>
+        <h2>Done Tasks <small>(<span id="done-shown"></span> of {{ profile.tasks.done|length }})</small></h2>
             <table id="done-task-list" class="table table-striped table-bordered table-condensed task-table">
                 <thead>
                 <tr>
@@ -115,10 +128,10 @@
                 </tr>
                 </thead>
                 <tbody>
-                {% include "proman/task_table_items.html" with task_items=user_done_project_tasks|slice:results_paginate %}
+                {% include "proman/task_table_items.html" with task_items=profile.tasks.done|slice:results_paginate %}
                 </tbody>
             </table>
-            {% if user_done_project_tasks|length|add:0 > results_paginate|add:0 %}<a id="more-done-tasks" href="javascript:;">Show More Done Tasks</a>{% endif %}
+            {% if profile.tasks.done|length|add:0 > results_paginate|add:0 %}<a id="more-done-tasks" href="javascript:;">Show More Done Tasks</a>{% endif %}
         </div>
         
     </div>
@@ -129,13 +142,18 @@
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.tablesorter.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function(){ 
-        $(".project-table").tablesorter({
-            headers: { 8: { sorter: false} }
-        });
-        $(".task-table").tablesorter({
-            headers: { 6: { sorter: false} }
-        });
-    
+    $(".project-table").tablesorter({
+        headers: { 8: { sorter: false} }
+    });
+    $(".task-table").tablesorter({
+        headers: { 6: { sorter: false} }
+    });
+
+    $('#done-project-list').hide()
+    $('#show-done-projects').on('click', function() {
+        $('#done-project-list').show()
+    });
+
     $('tr.project-row').show();
     $('form#live-filter').on('focus', '#project-search', function(e) {
         var tmpVAL = $('#project-search').val().toLowerCase();
@@ -184,7 +202,7 @@ $(document).ready(function(){
         var totalProjects = $("#project-list tbody tr:visible").size();
         $("#projects-shown").text(totalProjects);
     });
-    $("#projects-shown").text($("#project-list tbody tr").size());
+    $("#open-projects-shown").text($("#open-project-list tbody tr").size());
 
     $("#open-shown").text($("#open-task-list tbody tr").size());
     var openTaskInc = 1;

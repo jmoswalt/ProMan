@@ -8,6 +8,11 @@ from proman.models import Task, Project, Profile
 DUE_DT_INITIAL = timezone.now() + timedelta(weeks=1)
 COMPLETED_DT_INITIAL = timezone.now()
 
+STAFF_CHOICES = (
+    ('1','Employee'),
+    ('0','Client'),
+)
+
 class TaskForm(forms.ModelForm):
     due_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="Due Date")
     completed_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="Completion Date", required=False)
@@ -53,7 +58,7 @@ class TaskForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(TaskForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(version=False)
-        self.fields['owner'].queryset = Profile.objects.filter(role="employee", user__is_active=True)
+        self.fields['owner'].queryset = Profile.objects.filter(user__is_staff=True, user__is_active=True)
 
 class ProjectForm(forms.ModelForm):
     start_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="Start Date")
@@ -99,7 +104,7 @@ class ProjectForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
         # Restrict the list of potential Owners to active employees
-        active_employees = Profile.objects.filter(role="employee", user__is_active=True)
+        active_employees = Profile.objects.filter(user__is_staff=True, user__is_active=True)
         self.fields['owner'].queryset = active_employees
 
         # If we have an instance, be sure to add the current owner in case they
@@ -144,7 +149,7 @@ class TaskMiniForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(TaskMiniForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(version=False)
-        self.fields['owner'].queryset = Profile.objects.filter(role="employee", user__is_active=True)
+        self.fields['owner'].queryset = Profile.objects.filter(user__is_staff=True, user__is_active=True)
 
 class TaskCloseForm(forms.ModelForm):
     completed = forms.BooleanField(widget=forms.HiddenInput, required=False)
@@ -179,6 +184,8 @@ class TaskCloseForm(forms.ModelForm):
 
 class ProfileForm(forms.ModelForm):
     username = forms.CharField(help_text="Username defaults to email address if left empty.")
+    role = forms.ChoiceField(widget=forms.Select, choices=STAFF_CHOICES)
+    active = forms.BooleanField(required=False)
 
     class Meta:
         model = Profile
@@ -190,6 +197,7 @@ class ProfileForm(forms.ModelForm):
             'username',
             'phone',
             'title',
+            'active',
             'role',
             'team',
             'team_leader',

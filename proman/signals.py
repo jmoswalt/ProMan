@@ -18,8 +18,7 @@ def clear_project_tasks_cache(sender, instance, created, **kwargs):
 
 def clear_profile_tasks_cache(sender, instance, **kwargs):
     profile_keys = [
-        'profile.tasks',
-        'profile.task_data.%s' % SUNDAY_STR,
+        'profile.tasks.%s' % SUNDAY_STR,
     ]
     profile_clear_keys = []
     for key in profile_keys:
@@ -27,20 +26,24 @@ def clear_profile_tasks_cache(sender, instance, **kwargs):
     cache.delete_many(profile_clear_keys)
 
 def clear_profile_cache(sender, instance, **kwargs):
-    keys = [
+    instance_keys = [
         'profile.get_absolute_url',
         'profile.abbr_name',
         'profile.nice_name',
         'profile.client_name',
+        'profile.role',
     ]
+    model_keys = ['profiles.active_employees', 'profiles.inactive_employees']
+
     clear_keys = []
-    for key in keys:
+    for key in instance_keys:
         clear_keys.append((".".join([settings.SITE_CACHE_KEY, '%s', str(instance.pk)]) % key))
+    for key in model_keys:
+        clear_keys.append((".".join([settings.SITE_CACHE_KEY, '%s']) % key))
     cache.delete_many(clear_keys, None)
 
 def clear_project_cache(sender, instance, **kwargs):
     keys = [
-        'profile.project_data',
         'profile.projects',
     ]
     clear_keys = []

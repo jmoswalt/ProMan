@@ -5,13 +5,10 @@
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ user_object.first_name }} {{ user_object.last_name }} <small>{{ user_object.username }}</small></h1>
-    </div>
-    <div class="page-header">
     <div class="row">
         {% include "messages.html" %}
         <div class="span12">
-            <h2>Client Contacts <small><span id="people-shown">{{ users|length }}</span> of {{ users|length }} contacts | <a href="{% url user_create %}" class="colorize success">add someone</a></small></h2>
+            <h2>Client Contacts <small><span id="people-shown">{{ profiles|length }}</span> of {{ profiles|length }} contacts | <a href="{% url user_create %}" class="colorize success">add someone</a></small></h2>
             <form id="live-filter">
                 <input id="project-search" type="text" autocomplete="off" />
                 <span class="help-inline">Start Typing for Live Filtering</span>
@@ -26,7 +23,7 @@
                 </tr>
                 </thead>
                 <tbody>
-            {% for u in users %}
+            {% for u in profiles %}
                 <tr class="project-row">
                     <td><a href="{% url user_detail_pk u.user_id %}">{{ u.nice_name}}</a></td>
                     <td>{{ u.client_name }}</td>

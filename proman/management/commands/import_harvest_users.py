@@ -47,7 +47,7 @@ class Command(BaseCommand):
                         username=u['email'].replace("@schipul.com",""),
                         date_joined=u['created_at'],
                         is_active=u['is_active'],
-                        is_staff=u['is_active'],
+                        is_staff=True,
                         is_superuser=u['is_admin'])
                     user.save()
 

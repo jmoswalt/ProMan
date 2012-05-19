@@ -1,0 +1,38 @@
+            <thead><tr>
+                <th></th>
+                <th colspan="2">Projects</th>
+                <th colspan="4">Task Counts (Weekly)</th>
+                <th colspan="4">Task Hours (Weekly)</th>
+            </tr>
+                
+                <tr>
+                    <th class="blue">Name</th>
+                    <th class="blue">Open</th>
+                    <th class="blue">Done</th>
+                    <th class="blue">All</th>
+                    <th class="blue">Due</th>
+                    <th class="blue">Done</th>
+                    <th class="blue">Avg</th>
+                    <th class="blue">All</th>
+                    <th class="blue">Due</th>
+                    <th class="blue">Done</th>
+                    <th class="blue">Avg</th>
+                </tr>
+                </thead>
+                <tbody>
+            {% for p in profiles %}
+                <tr class="project-row">
+                    <td><a href="{% url user_detail_pk p.user_id %}">{{ p.nice_name}}</a></td>
+                    <td>{{ p.projects.open|length }}</td>
+                    <td>{{ p.projects.done|length }}</td>
+                    <td>{{ p.tasks.open|length }}</td>
+                    <td>{{ p.tasks.week_due|length }}</td>
+                    <td>{{ p.tasks.week_done|length }}</td>
+                    <td>{% firstof p.tasks.velocity_count|floatformat "0" %}</td>
+                    <td>{% firstof p.tasks.open_hours|floatformat "0" %}</td>
+                    <td>{% firstof p.tasks.week_due_hours|floatformat "0" %}</td>
+                    <td>{% firstof p.tasks.week_done_hours|floatformat "0" %}</td>
+                    <td>{% firstof p.tasks.velocity_hours|floatformat "0" %}</td>
+                </tr>
+            {% endfor %}
+                </tbody>

@@ -7,7 +7,7 @@ class Command(BaseCommand):
     Build our cache
     """
     def handle(self, *args, **options):
-        apps = ['profiles']
+        apps = ['profiles', 'projects']
         if args:
             apps = args
 
@@ -19,12 +19,8 @@ class Command(BaseCommand):
                 for p in profiles:
                     p.client_name()
                     #p.get_absolute_url()
-                    p.open_projects()
-                    p.done_projects()
-                    p.total_open_tasks()
-                    p.velocity_tasks()
-                    p.week_due_tasks()
-                    p.week_done_tasks()
+                    p.project_data()
+                    p.task_data()
                 print "Profile Cache Done."
 
             if app == "projects":

@@ -21,3 +21,11 @@ def action_flag_icon(context, af):
         "af": af,
     })
     return context
+
+@register.inclusion_tag("proman/profiles/add_link.html", takes_context=True)
+def profile_add_link(context):
+    if context['request'].user.is_staff or context['request'].user.is_superuser:
+        context.update({
+            "show_link": True,
+        })
+    return context

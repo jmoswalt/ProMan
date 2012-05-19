@@ -4,6 +4,8 @@ from django.utils import simplejson as json
 from django.core.cache import cache
 from django.conf import settings
 
+from proman.models import Setting
+
 def get_change_message(old, new, fields):
     if old and new and fields:
         output = []
@@ -57,16 +59,23 @@ def get_profile_change_message(old=None, new=None):
         'email',
         'phone',
         'title',
-        'role',
         'team_id',
         'team_leader',
         'client_id',
     )
     return get_change_message(old, new, fields)
 
-def cache_item(value, key=None):
-    if key:
-        cache.set(key, value)
-        return cache.get(key)
-    return None
 
+def get_cached_setting(key):
+    prekey = "app_setting"
+    cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, prekey, key) 
+    cached = cache.get(cache_key)
+    if cached is None:
+        try:
+            cached = Setting.objects.get(slug=key).value
+            if cached is None:
+                cached = ""
+        except:
+            cached = ""
+        cache.set(cache_key, cached)
+    return cached

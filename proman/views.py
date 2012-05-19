@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.utils.encoding import force_unicode
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.http import Http404
 from django.views.generic import DetailView, ListView, CreateView, UpdateView
@@ -49,18 +50,17 @@ def UserIdRedirect(request, pk=None):
 
 
 class UserListView(ListView):
-    model = User
-    queryset = Profile.objects.filter(user__is_active=True, role="Employee").order_by('last_name')
-    context_object_name = "active_employees"
+    model = Profile
     template_name = "proman/user_list.html"
 
-    @method_decorator(login_required)
+    @method_decorator(staff_member_required)
     def dispatch(self, *args, **kwargs):
         return super(UserListView, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(UserListView, self).get_context_data(**kwargs)
-        context['inactive_employees'] = Profile.objects.filter(user__is_active=False, role="Employee").order_by('last_name')
+        context['inactive_employees'] = Profile.objects.inactive_employees()
+        context['active_employees'] = Profile.objects.active_employees()
         inactive_employees = context['inactive_employees']
         inactive_pks = [p.pk for p in inactive_employees]
         context['open_projects_inactives'] = Project.objects.filter(version=False, owner_id__in=inactive_pks).exclude(status="done")
@@ -68,7 +68,8 @@ class UserListView(ListView):
         return context
 
 class ContactListView(UserListView):
-    queryset = Profile.objects.filter(role="Client").order_by('last_name')
+    queryset = Profile.objects.filter(user__is_staff=False).order_by('last_name')
+    context_object_name = "profiles"
     template_name = "proman/client_list.html"
 
 
@@ -79,7 +80,7 @@ class UserCreateView(CreateView):
     form_class = ProfileForm
     template_name = "proman/user_update.html"
 
-    @method_decorator(login_required)
+    @method_decorator(staff_member_required)
     def dispatch(self, *args, **kwargs):
         return super(UserCreateView, self).dispatch(*args, **kwargs)
 
@@ -131,7 +132,16 @@ class UserUpdateView(UpdateView):
 
     def get_initial(self):
         super(UserUpdateView, self).get_initial()
-        self.initial = {"username":self.get_object().user.username}
+        if self.get_object().user.is_staff:
+            role = "1"
+        else:
+            role = "0"
+
+        self.initial = {
+            "username": self.get_object().user.username,
+            "role": role,
+            "active": self.get_object().user.is_active,
+        }
         return self.initial
 
     def form_valid(self, form):
@@ -143,6 +153,13 @@ class UserUpdateView(UpdateView):
         profile.user.last_name = profile.last_name
         profile.user.email = profile.email
         profile.user.username = form.cleaned_data['username']
+
+        if form.cleaned_data['role'] == "1":
+            profile.user.is_staff = True
+        else:
+            profile.user.is_staff = False
+
+        profile.user.is_active = form.cleaned_data['active']
         profile.user.save()
 
         change_message = get_profile_change_message(orig, self.object)
@@ -169,7 +186,7 @@ class UserUpdateView(UpdateView):
 
 class UserDetailView(DetailView):
     model = Profile
-    context_object_name = "profile_object"
+    context_object_name = "profile"
     template_name = "proman/user_detail.html"
 
     @method_decorator(login_required)
@@ -178,26 +195,12 @@ class UserDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(UserDetailView, self).get_context_data(**kwargs)
-        #TODO: Move all of these contexts into methods for the Profile object
-        context['user_open_project_tasks'] = Task.originals.owner_id(context['profile_object'].pk).exclude(completed=True).order_by('due_dt')
-        context['user_done_project_tasks'] = Task.objects.filter(version=False, owner=context['profile_object'], completed=True).order_by('due_dt')
-
-        context['user_project_tasks_hours'] = context['user_open_project_tasks'].aggregate(total=Sum('task_time'))
-
-        context['project_tasks_not_started'] = Task.objects.filter(version=False, owner=context['profile_object'], completed=False).order_by('due_dt')
-        context['project_tasks_not_started_hours'] = context['project_tasks_not_started'].aggregate(total=Sum('task_time'))
-
-        context['project_tasks_done'] = Task.objects.filter(version=False, owner=context['profile_object'], completed=True).order_by('due_dt')
-        context['project_tasks_done_hours'] = context['project_tasks_done'].aggregate(total=Sum('task_time'))
-        
-        context['user_projects'] = Project.objects.filter(version=False, owner=context['profile_object']).order_by('-status', 'start_dt')
-        context['user_open_projects'] = Project.objects.filter(version=False, owner=context['profile_object']).exclude(status="done")
-        context['user_open_project_stats'] = Project.objects.filter(version=False, owner=context['profile_object']).exclude(status="done").aggregate(total_tasks=Count('task'), total_task_hours=Sum('task__task_time'))
+        #TODO: Move all of these contexts into methods for the Profile 
 
         # Pull projects for a client
-        if context['profile_object'].client:
-            context['user_projects'] = Project.objects.filter(version=False, client=context['profile_object'].client).order_by('-status', 'start_dt')
-            context['user_open_project_tasks'] = Task.objects.filter(version=False, project__client=context['profile_object'].client).exclude(completed=True, private=True).order_by('due_dt')
+        if context['profile'].client:
+            context['user_projects'] = Project.objects.filter(version=False, client=context['profile'].client).order_by('-status', 'start_dt')
+            context['user_open_project_tasks'] = Task.objects.filter(version=False, project__client=context['profile'].client).exclude(completed=True, private=True).order_by('due_dt')
 
         context['results_paginate'] = "10"
         return context

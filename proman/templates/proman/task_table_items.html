@@ -1,8 +1,8 @@
 {% for task in task_items %}
                     <tr class="project-row">
-                        <td>{{ task.original.pk }}</td>
+                        <td>{{ task.original_id }}</td>
                         <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a></td>
-                        <td><a href="{% url project_detail task.project.pk %}">{{ task.project.name|title }}</a></td>
+                        <td><a href="{% url project_detail task.project_id %}">{{ task.project.name|title }}</a></td>
                         <td class="colorize {{ task.due_class }}">{{ task.due_dt|date:"m/d, D" }}</td>
                         <td>{{ task.task_time }}</td>
                         <td><a href="{% url task_update task.pk %}?next={{ request.path }}" class="label info">Edit</a></td>

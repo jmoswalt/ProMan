@@ -83,7 +83,6 @@ class Command(BaseCommand):
                         profile.first_name = c['first_name']
                         profile.last_name = c['last_name']
                         profile.phone = c['phone_office']
-                        profile.role = "client"
                         profile.client = client
                         profile.save()
 

@@ -6,7 +6,6 @@ from django.conf import settings
 from django.core.cache import cache
 
 from proman.models import Task
-from proman.utils import cache_item
 
 register = template.Library()
 
@@ -40,8 +39,8 @@ def user_object(pk):
         try:
             cached = User.objects.get(pk=pk)
         except:
-            cached = "None"
-        cache_item(cached, cache_key)
+            cached = ""
+        cache.set(cache_key, cached)
     return cached
 
 @register.filter
@@ -53,8 +52,8 @@ def task_name(pk):
         try:
             cached = Task.objects.get(pk=pk)
         except:
-            cached = "None"
-        cache_item(cached, cache_key)
+            cached = ""
+        cache.set(cache_key, cached)
     return cached.title
 
 @register.filter
@@ -66,8 +65,8 @@ def user_abbr_name(pk):
         try:
             cached = User.objects.get(pk=pk).profile.abbr_name()
         except:
-            cached = "no name"
-        cache_item(cached, cache_key)
+            cached = ""
+        cache.set(cache_key, cached)
     return cached
 
 @register.filter

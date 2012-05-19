@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 
+{% load proman_tags %}
+
 {% block title %}Employee List{% endblock title %}
 
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>Employees <small>{{ active_employees|length }} active | <a href="{% url user_create %}" class="colorize success">add someone</a></small></h1>
+        <h1>Employees <small>{{ active_employees|length }} active | {% profile_add_link %}</small></h1>
     </div>
     <div class="row">
         <div class="span12">
@@ -18,88 +20,17 @@
             </div>
             {% endif %}
             <table id="employee-list" class="table table-striped table-bordered table-condensed">
-            <thead><tr>
-                <th></th>
-                <th colspan="2">Projects</th>
-                <th colspan="4">Task Counts (Weekly)</th>
-                <th colspan="4">Task Hours (Weekly)</th>
-            </tr>
-                
-                <tr>
-                    <th class="blue">Name</th>
-                    <th class="blue">Open</th>
-                    <th class="blue">Done</th>
-                    <th class="blue">All</th>
-                    <th class="blue">Due</th>
-                    <th class="blue">Done</th>
-                    <th class="blue">Avg</th>
-                    <th class="blue">All</th>
-                    <th class="blue">Due</th>
-                    <th class="blue">Done</th>
-                    <th class="blue">Avg</th>
-                </tr>
-                </thead>
-                <tbody>
-            {% for p in active_employees %}
-                <tr class="project-row">
-                    <td><a href="{% url user_detail_pk p.user_id %}">{{ p.nice_name}}</a></td>
-                    <td>{{ p.project_data.open|length }}</td>
-                    <td>{{ p.project_data.done|length }}</td>
-                    <td>{{ p.task_data.open_tasks|length }}</td>
-                    <td>{{ p.task_data.week_due_tasks|length }}</td>
-                    <td>{{ p.task_data.week_done_tasks|length }}</td>
-                    <td>{% firstof p.task_data.velocity_tasks_count|floatformat "0" %}</td>
-                    <td>{% firstof p.task_data.open_task_hours|floatformat "0" %}</td>
-                    <td>{% firstof p.task_data.week_due_task_hours|floatformat "0" %}</td>
-                    <td>{% firstof p.task_data.week_done_task_hours|floatformat "0" %}</td>
-                    <td>{% firstof p.task_data.velocity_task_hours|floatformat "0" %}</td>
-                </tr>
-            {% endfor %}
-                </tbody>
+            {% include "proman/profiles/employee_table.html" with profiles=active_employees %}
             </table>
+            <p><a class="show-inactive" href="#inactives">{% if inactive_employees %}Show inactive{% else %}No inactive employees{% endif %}</a></p>
         </div>
-        <p><a class="show-inactive" href="#inactives">Show inactive</a></p>
         <div id="inactives" class="span12">
+            
             <h2>Inactive Employees <small>{{ inactive_employees|length }} inactive</h2>
             <table id="inactive-employee-list" class="table table-striped table-bordered table-condensed">
-            <thead><tr>
-                <th></th>
-                <th colspan="2">Projects</th>
-                <th colspan="4">Task Counts (Weekly)</th>
-                <th colspan="4">Task Hours (Weekly)</th>
-            </tr>
-                
-                <tr>
-                    <th class="blue">Name</th>
-                    <th class="blue">Open</th>
-                    <th class="blue">Done</th>
-                    <th class="blue">All</th>
-                    <th class="blue">Due</th>
-                    <th class="blue">Done</th>
-                    <th class="blue">Avg</th>
-                    <th class="blue">All</th>
-                    <th class="blue">Due</th>
-                    <th class="blue">Done</th>
-                    <th class="blue">Avg</th>
-                </tr>
-                </thead>
-                <tbody>
-            {% for p in inactive_employees %}
-                <tr class="project-row">
-                    <td><a href="{% url user_detail_pk p.user_id %}">{{ p.nice_name}}</a></td>
-                    <td>{{ p.project_data.open|length }}</td>
-                    <td>{{ p.project_data.done|length }}</td>
-                    <td>{{ p.task_data.open_tasks|length }}</td>
-                    <td>{{ p.task_data.week_due_tasks|length }}</td>
-                    <td>{{ p.task_data.week_done_tasks|length }}</td>
-                    <td>{% firstof p.task_data.velocity_tasks_count|floatformat "0" %}</td>
-                    <td>{% firstof p.task_data.open_task_hours|floatformat "0" %}</td>
-                    <td>{% firstof p.task_data.week_due_task_hours|floatformat "0" %}</td>
-                    <td>{% firstof p.task_data.week_done_task_hours|floatformat "0" %}</td>
-                    <td>{% firstof p.task_data.velocity_task_hours|floatformat "0" %}</td>
-                </tr>
-            {% endfor %}
-                </tbody>
+            {% if inactive_employees %}
+                {% include "proman/profiles/employee_table.html" with profiles=inactive_employees %}
+            {% endif %}
             </table>
         </div>
         <div class="span4">
@@ -136,13 +67,19 @@
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.tablesorter.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function(){ 
-        $(".table-striped").tablesorter({
-            sortList: [[9,1]],
-        });
-        $("#inactives").hide();
-        $('.show-inactive').on('click', function() {
-            $("#inactives").toggle();
-        });
+    $(".table-striped").each(function() {
+        console.log($(this))
+        if ($(this).children().length > 0) {
+            $(this).tablesorter({
+                sortList: [[9,1]],
+            });
+        }
     });
+
+    $("#inactives").hide();
+    $('.show-inactive').on('click', function() {
+        $("#inactives").toggle();
+    });
+});
 </script>
 {% endblock js %}

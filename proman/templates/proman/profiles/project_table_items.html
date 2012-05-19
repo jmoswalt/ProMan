@@ -1,0 +1,12 @@
+            {% for project in projects %}
+                <tr class="project-row">
+                    <td>{{ forloop.counter }}</td>
+                    <td><a href="{% url project_detail project.pk %}">{{ project.name }}</a></td>
+                    <td>{{ project.technology }}</td>
+                    <td>{{ project.age }} days</td>
+                    <td>{{ project.tasks_count }}</td>
+                    <td>{{ project.tasks_hours }}</td>
+                    <td>{{ project.completion_perc }} %</td>
+                    <td><a class="label info" href="{% url project_update project.pk %}?next={{ request.path }}">Edit</a></td>
+                </tr>
+            {% endfor %}
