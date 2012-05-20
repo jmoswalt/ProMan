@@ -14,7 +14,7 @@ h1 .label { font-size: 18px; padding: 2px 4px; }
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ profile.nice_name }} <span class="label success">{{ profile.role }}</span>  <a class="btn pull-right primary" href="{% url user_update profile.pk %}">Edit Person</a></h1>
+        <h1>{{ profile.nice_name }} <span class="label label-success">{{ profile.role }}</span>  <a class="btn pull-right btn-primary" href="{% url user_update profile.pk %}">Edit Person</a></h1>
     </div>
     <div class="page-header">
     <div class="row">

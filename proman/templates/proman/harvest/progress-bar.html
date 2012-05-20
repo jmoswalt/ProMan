@@ -2,12 +2,12 @@
             {% if project.harvest_budget.first >= 0 %}
             <div class="">
                 {% if project.harvest_budget.over %}
-                <div class="progress {{ project.harvest_budget.first_class }}" style="float: left; width: {{ project.harvest_budget.first }}%;" >
+                <div class="progress progress-{{ project.harvest_budget.first_class }}" style="float: left; width: {{ project.harvest_budget.first }}%;" >
                     <div class="bar" style="width: 100%;"></div></div>
-                <div class="progress {{ project.harvest_budget.over_class }}" style="float: left; width: {{ project.harvest_budget.over_perc }}%;" >
+                <div class="progress progress-{{ project.harvest_budget.over_class }}" style="float: left; width: {{ project.harvest_budget.over_perc }}%;" >
                     <div class="bar" style="width: 100%;">{{ project.harvest_budget.over|add:100 }}%</div></div>
                 {% else %}
-                <div class="progress {{ project.harvest_budget.first_class }}">
+                <div class="progress progress-{{ project.harvest_budget.first_class }}">
                     <div class="bar" style="width: {{ project.harvest_budget.first }}%;">{{ project.harvest_budget.first }}%</div>
                 </div>
                 {% endif %}

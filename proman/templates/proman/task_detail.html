@@ -15,7 +15,7 @@
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ task.title }} <small>{% if not task.completed %}Est: {% endif %}<strong></strong>{{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</strong> &mdash; {% if task.completed %}Done {{ task.completed_dt|naturaltime }}{% else %}Due: <strong>{{ task.due_dt|naturaltime }}</strong>{% endif %}</small> <a href="{% url task_update task.pk %}" class="btn primary pull-right">Edit Task</a></h1>
+        <h1>{{ task.title }} <small>{% if not task.completed %}Est: {% endif %}<strong></strong>{{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</strong> &mdash; {% if task.completed %}Done {{ task.completed_dt|naturaltime }}{% else %}Due: <strong>{{ task.due_dt|naturaltime }}</strong>{% endif %}</small> <a href="{% url task_update task.pk %}" class="btn btn-primary pull-right">Edit Task</a></h1>
     </div>
     <div class="row">
         {% include "messages.html" %}
@@ -28,7 +28,7 @@
             {% endif %}
             <div>{{ task.description|safe|linebreaks }}</div>
             {% if not task.completed %}
-            <p><a href="#close-form-modal" data-toggle="modal" class="btn success">Close Task</a></p>
+            <p><a href="#close-form-modal" data-toggle="modal" class="btn btn-success">Close Task</a></p>
             {% endif %}
             {% if task.resolution and task.completed %}
             <div class="alert alert-block alert-success">

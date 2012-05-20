@@ -31,7 +31,7 @@ class Command(BaseCommand):
                 u = d['user']
                 try:
                     # try to get the user
-                    match = User.objects.get(email=u['email'])
+                    match = User.objects.filter(email=u['email']).order_by('id')[0]
                     if ci:
                         cache.incr(('content_import.matched.%s') % ci.pk)
                     print "MATCH!!! ", match

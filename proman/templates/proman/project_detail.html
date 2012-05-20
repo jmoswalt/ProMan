@@ -36,7 +36,7 @@ tr.stuck { background-color: #FEE9CC; }
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{{ project.client_name }} <small>{{ project.name }} </small> <span id="project-status" class="label {{ project.status_class }}">{{ project.status }}</span> <a class="btn pull-right primary" href="{% url project_update project.pk %}">Edit Project</a></span></h1>
+        <h1>{{ project.client_name }} <small>{{ project.name }} </small> <span id="project-status" class="label label-{{ project.status_class }}">{{ project.status }}</span> <a class="btn pull-right btn-primary" href="{% url project_update project.pk %}">Edit Project</a></span></h1>
     </div>
     <div class="page-header">
         <div class="row">
@@ -58,7 +58,7 @@ tr.stuck { background-color: #FEE9CC; }
                 <div class="row">
                     <div class="span3">
                         
-                        <p>{% if project.ongoing %}<span class="label warning ongoing">Ongoing</span><br />{% endif %}<h4><strong>Owner:</strong> <a href="{{ project.owner_url }}">{{ project.owner_name }}</a></h4>
+                        <p>{% if project.ongoing %}<span class="label label-warning ongoing">Ongoing</span><br />{% endif %}<h4><strong>Owner:</strong> <a href="{{ project.owner_url }}">{{ project.owner_name }}</a></h4>
                         <strong>Technology:</strong> {{ project.technology }}<br />
                         <strong>Started:</strong> {{ project.start_dt|date:"n/j/Y" }}</p>
                         
@@ -134,7 +134,7 @@ tr.stuck { background-color: #FEE9CC; }
                 </div>
                 {% endfor %}
                 <div class="form-actions">
-                    <button id="task-add-btn" class="btn success">Create a Task</button>
+                    <button id="task-add-btn" class="btn btn-success">Create a Task</button>
                     <button type="reset" class="btn">Cancel</button>
                 </div>
                 </form>

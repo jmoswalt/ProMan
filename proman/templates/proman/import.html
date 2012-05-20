@@ -7,7 +7,7 @@
     </div>
 </div>
 <div class="span4">
-    <div class="progress {% if ci.complete_dt %}success {% else %}info striped active{% endif %}">
+    <div class="progress progress-{% if ci.complete_dt %}success {% else %}info progress-striped active{% endif %}">
         <div class="bar" {% if ci.complete_dt %}style="width: 100%;"{% endif %}></div>
     </div>
     <div id="status">Connecting... <span id="started"></span> <span id="completed">{% if ci.complete_dt %}Complete!{% endif %}</span></div>
@@ -37,8 +37,8 @@ var import_check = setInterval(function() {
     var complete = $("#hidden-results #complete").text();
     if (complete.indexOf("Complete") != -1) {
         $("#completed").text(complete);
-        $(".progress").removeClass("info active striped success");
-        $(".progress").addClass("success");
+        $(".progress").removeClass("progress-info active progress-striped progress-success");
+        $(".progress").addClass("progress-success");
         clearInterval(import_check);
     } else {
         importCheck();
