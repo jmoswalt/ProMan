@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from proman.models import Profile, Project
+from proman.models import Profile, Project, Task
 
 class Command(BaseCommand):
     """
@@ -27,7 +27,7 @@ class Command(BaseCommand):
                 print "Starting Project Cache..."
                 projects = Project.originals.all()
                 for p in projects:
-                    p.tasks_logs()
+                    #p.tasks_logs()
                     p.tasks()
                     p.harvest_project_id()
                     p.harvest_budget_spent()
