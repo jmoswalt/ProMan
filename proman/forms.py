@@ -75,6 +75,7 @@ class ProjectForm(forms.ModelForm):
             'end_dt',
             'task_budget',
             'technology',
+            'client',
             'status',
             'ongoing',
         )
@@ -121,6 +122,7 @@ class ProjectForm(forms.ModelForm):
 
 class TaskMiniForm(forms.ModelForm):
     project = forms.CharField(widget=forms.HiddenInput)
+    billable = forms.BooleanField(widget=forms.HiddenInput)
     due_dt = forms.CharField(widget=forms.DateTimeInput(format='%m/%d/%Y'), label="Due Date")
 
     class Meta:
@@ -133,6 +135,7 @@ class TaskMiniForm(forms.ModelForm):
             'owner',
             'description',
             'project',
+            'billable',
         )
 
     def clean_due_dt(self):

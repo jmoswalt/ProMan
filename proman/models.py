@@ -4,7 +4,6 @@ from math import sqrt
 
 from django.db import models
 from django.db.models import Sum, Count
-from django.db.models.signals import post_save
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.contrib.auth.models import User
@@ -144,7 +143,10 @@ class Profile(models.Model):
             'all': [],
             'open': [],
             'done': [],
-            'tasks': [],
+            'tasks': {
+                'all': [],
+                'all_hours': 0,
+                },
             'open_task_budget': {
                 'nonongoing': 0,
                 'ongoing': 0,
@@ -157,7 +159,8 @@ class Profile(models.Model):
             projects = Project.originals.filter(client_id=self.client_id)
         for p in projects:
             output['all'].append(p)
-            output['tasks'].append(p.tasks())
+            output['tasks']['all'].append(p._task_data()['all'])
+            output['tasks']['all_hours'] += p._task_data()['all_hours']
 
             if p.status != "Done":
                 output['open'].append(p)
@@ -334,7 +337,7 @@ class Project(models.Model):
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
         cached = cache.get(cache_key)
         if cached is None:
-            task_pks = [item.pk for item in self.tasks()]
+            task_pks = [item.pk for item in self.tasks()['all']]
             cached = LogEntry.objects.filter(content_type=ContentType.objects.get(model='task'), action_flag__in=[1,5,6], object_id__in=task_pks).order_by('-action_time')[:6]
             if cached is None:
                 cached = []
@@ -375,83 +378,25 @@ class Project(models.Model):
 
         return output
 
-
-
-
-
-
-
-
-    def tasks(self):
+    def _tasks(self):
         key = "project.tasks"
         cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
         cached = cache.get(cache_key)
         if cached is None:
-            cached = self.task_set.filter(version=False).order_by('due_dt')
+            cached = self._task_data()
             if cached is None:
                 cached = []
             cache.set(cache_key, cached)
         return cached
 
-    def tasks_count(self):
-        if self.tasks():
-            return self.tasks().count()
-        return 0
-
-    def tasks_hours(self):
-        if self.tasks():
-            total = 0
-            for i in self.tasks():
-                total += i.task_time
-            return total
-        return 0
-
-    def tasks_done(self):
-        key = "project.tasks_done"
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
-        cached = cache.get(cache_key)
-        if cached is None:
-            cached = self.tasks().filter(completed=True).order_by('due_dt')
-            cache.set(cache_key, cached)
-        return cached
-
-    def tasks_done_hours(self):
-        if self.tasks_done():
-            total = 0
-            for i in self.tasks_done():
-                total += i.task_time
-            return total
-        return 0
-
-    def tasks_done_count(self):
-        if self.tasks_done():
-            return self.tasks_done().count()
-        return 0
-
-    def tasks_not_done(self):
-        key = "project.tasks_not_done"
-        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.id) 
-        cached = cache.get(cache_key)
-        if cached is None:
-            cached = self.tasks().filter(completed=False).order_by('due_dt')
-            cache.set(cache_key, cached)
-        return cached
-
-    def tasks_not_done_hours(self):
-        if self.tasks_hours():
-            return self.tasks_hours() - self.tasks_done_hours()
-        return 0
-
-    def tasks_not_done_count(self):
-        if self.tasks_count():
-            return self.tasks_count() - self.tasks_done_count()
-        return 0
+    def tasks(self):
+        return self._tasks()
 
     def completion_perc(self):
         if self.status == "Done":
             return 100
-        done = float(self.tasks_done_count())
-        total = float(self.tasks_count())
+        done = float(len(self.tasks()['done']))
+        total = float(len(self.tasks()['all']))
         avg_tasks = 36.0
         lowest = done
         if done > avg_tasks: lowest = avg_tasks
@@ -617,6 +562,7 @@ class Project(models.Model):
             cache.set(cache_key, cached)
         return cached
 
+
 TASK_TIME_CHOICES = (
     (Decimal('0.25'),'15 Mins'),
     (Decimal('0.50'),'30 Mins'),
@@ -714,18 +660,15 @@ class Task(models.Model):
             cache.set(cache_key, cached)
         return cached
 
+    def project_name(self):
+        key = "project.name"
+        cache_key = "%s.%s.%s" % (settings.SITE_CACHE_KEY, key, self.project_id) 
+        cached = cache.get(cache_key)
+        if cached is None:
+            cached = self.project.name
+            cache.set(cache_key, cached)
+        return cached
 
-def create_first_user_profile(sender, instance, created, **kwargs):
-    if created and instance.pk == 1:
-        Profile.objects.create(user=instance)
-
-def update_active_user_cache(sender, instance, created, **kwargs):
-    key = ".".join([settings.SITE_CACHE_KEY,'active_users'])
-    value = Profile.objects.filter(user__is_active=True).order_by('last_name').select_related()
-    cache.set(key, value)
-
-post_save.connect(create_first_user_profile, sender=User)
-post_save.connect(update_active_user_cache, sender=Profile)
 
 class ThirdParty(models.Model):
     content_type = models.ForeignKey(ContentType, db_index=True)

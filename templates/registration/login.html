@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Login to ProMan{% endblock title %}
+
+{% block body %}
+
+<div class="span4 offset4 well">
+    <h1>Login to {% firstof SITE_NAME "ProMan" %}</h1>
+    <form method="post" action="">{% csrf_token %}
+    {% for field in form.visible_fields %}
+        <p class="help-block">{{ field.errors }}</p>
+    {% endfor %}
+    <input id="id_username" type="text" name="username" maxlength="30" placeholder="Username"/>
+    <input id="id_password" type="password" name="password" placeholder="Password"/>
+    <p><button type="submit" class="btn btn-success">Login</button></p>
+    </form>
+    
+    <a href="{% url django.contrib.auth.views.password_reset %}">Forgot your password?</a>
+</div>
+
+{% endblock body %}

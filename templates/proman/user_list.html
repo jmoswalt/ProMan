@@ -67,14 +67,18 @@
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.tablesorter.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function(){ 
-    $(".table-striped").each(function() {
-        console.log($(this))
-        if ($(this).children().length > 0) {
-            $(this).tablesorter({
-                sortList: [[9,1]],
-            });
-        }
-    });
+    if ($("#employee-list").children().length > 0) {
+        $("#employee-list").tablesorter({
+            sortList: [[9,1]],
+        });
+    }
+
+    if ($("#inactive-employee-list").children().length > 0) {
+        $("#inactive-employee-list").tablesorter({
+            sortList: [[1,1]],
+        });
+    }
+
 
     $("#inactives").hide();
     $('.show-inactive').on('click', function() {

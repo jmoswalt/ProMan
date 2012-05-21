@@ -1,5 +1,6 @@
 from django.conf.urls.defaults import *
 from django.views.generic import TemplateView
+from django.views.generic.simple import redirect_to
 from registration import urls as reg_urls
 
 from proman import views, signals
@@ -40,9 +41,10 @@ urlpatterns = patterns('',
     url(r'^import/check/(?P<pk>\d+)/$', views.import_check, name='import_check'),
     url(r'^import/(?P<content_type>[\w]+)/(?P<pk>\d+)/$', views.import_content_attempt, name='import_content_attempt'),
 
-    url(r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'admin/login.html'}, name='login'),
-    url(r'^reset-password/$', 'django.contrib.auth.views.password_reset', name='password_reset'),
-    url(r'^reset-password/done/$', 'django.contrib.auth.views.password_reset_done', {'template_name': 'admin/password_reset_done.html'}, name='password_reset_done'),
+    url(r'^accounts/profile/$', redirect_to, {'url': '/me/'}),
+    url(r'^accounts/', include('django.contrib.auth.urls')),
+    url(r'^login/$', redirect_to, {'url': '/accounts/login/'}),
+
     # Waiting on 1.4 compatibility
     # url(r'^grappelli/', include('grappelli.urls')),
     url(r'^admin/', include(admin.site.urls)),

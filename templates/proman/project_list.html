@@ -8,7 +8,7 @@
         <h1>Project List <small>(<span id="projects-shown"></span> of {{ projects_total  }}) | <a href="{% url project_create %}?next={{ request.path }}" class="colorize success">add new</a></small><small class="pull-right">
             <select id="display-options">
                 <option {% if display == "all" %}selected=selected{% endif %} value="{% url projects %}?display=all">Show all</option>
-                <option {% if display == "open" %}selected=selected{% endif %} value="{% url projects %}">Show open</option>
+                <option {% if display == "open" %}selected=selected{% endif %} value="{% url projects %}">Show only open</option>
                 <option {% if display == "done" %}selected=selected{% endif %} value="{% url projects %}?display=done">Show only done</option>
             </select>
         </small></h1>
@@ -22,19 +22,7 @@
                 {% if projects_total|add:0 > results_paginate|add:0 %}<a id="more-projects" href="javascript:;">Load More Projects</a>{% endif %}
             </form>
             <table id="project-list" class="table table-striped table-bordered table-condensed">
-                <thead>
-                <tr>
-                    <th class="blue">Client</th>
-                    <th class="blue">Project</th>
-                    <th class="blue">Owner</th>
-                    <th class="blue">Tech</th>
-                    <th class="blue">End Date</th>
-                    <th class="blue">Age (days)</th>
-                    <th class="blue">% Done</th>
-                    <th class="blue">Budget</th>
-                    <th class="blue">Score</th>
-                </tr>
-                </thead>
+                {% include "proman/projects/project_table_header.html" %}
                 <tbody>
                     {% include "proman/project_table_items.html" with projects=projects|slice:results_paginate %}
                 </tbody>

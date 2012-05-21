@@ -1,3 +1,6 @@
+import string
+from random import sample, choice
+
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
@@ -13,6 +16,10 @@ class Command(BaseCommand):
     """
     def handle(self, *args, **options):
         total = 0
+        # Options for password
+        chars = string.letters + string.digits
+        length = 10
+
         ci = None
         try:
             content_import_pk = args[0]
@@ -49,6 +56,8 @@ class Command(BaseCommand):
                         is_active=u['is_active'],
                         is_staff=True,
                         is_superuser=u['is_admin'])
+
+                    user.set_password(''.join([choice(chars) for i in range(length)]))
                     user.save()
 
                     # update the profile with the team and employee role

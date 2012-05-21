@@ -1,0 +1,10 @@
+{% for task in task_items %}
+                    <tr class="project-row">
+                        <td><a href="{% url task_detail task.pk %}">{{ task.title }}</a>
+                            <a class="label label-info pull-right" href="{% url task_update task.pk %}?next={{ request.path }}">Edit</a>
+                        </td>
+                        <td><a href="{% url project_detail task.project_id %}">{{ task.project_name|title }}</a></td>
+                        <td class="colorize {{ task.due_class }}">{{ task.due_dt|date:"m/d, D" }}</td>
+                        <td>{{ task.task_time }}</td>
+                    </tr>
+                {% endfor %}

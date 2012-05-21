@@ -18,7 +18,7 @@
         <h1>{{ task.title }} <small>{% if not task.completed %}Est: {% endif %}<strong></strong>{{ task.task_time|floatformat }} hour{{ task.task_time|pluralize }}</strong> &mdash; {% if task.completed %}Done {{ task.completed_dt|naturaltime }}{% else %}Due: <strong>{{ task.due_dt|naturaltime }}</strong>{% endif %}</small> <a href="{% url task_update task.pk %}" class="btn btn-primary pull-right">Edit Task</a></h1>
     </div>
     <div class="row">
-        {% include "messages.html" %}
+        <div class="span12">{% include "messages.html" %}</div>
         <div class="span8">
             {% if task.overdue %}
             <div class="alert alert-error">
@@ -47,9 +47,9 @@
             <strong>Status:</strong> {{ task.status }}<br />
             
             {% if task.billable %}
-                <span class="label success">Billable</span>
+                <span class="label label-success">Billable</span>
             {% else %}
-                <span class="label important">Non-Billable</span>
+                <span class="label label-important">Non-Billable</span>
             {% endif %}</p>
                         <h2>Project Info</h2>
             <h3><a href="{% url project_detail task.project.pk %}">{{ task.project.name }}</a></h3><p>

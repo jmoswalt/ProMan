@@ -187,7 +187,7 @@ class UserUpdateView(UpdateView):
 class UserDetailView(DetailView):
     model = Profile
     context_object_name = "profile"
-    template_name = "proman/user_detail.html"
+    template_name = "proman/profile_detail.html"
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -523,6 +523,7 @@ class ProjectDetailView(DetailView):
         form.fields['owner'].initial = user.profile.id
         form.fields['project'].initial = project
         form.fields['due_dt'].initial = DUE_DT_INITIAL
+        form.fields['billable'].initial = True
         context = super(ProjectDetailView, self).get_context_data(**kwargs)
 
         project_tasks = Task.objects.filter(version=False, project=self.kwargs['pk'])

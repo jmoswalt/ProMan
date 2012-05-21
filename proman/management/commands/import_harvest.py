@@ -12,3 +12,5 @@ class Command(BaseCommand):
         call_command('import_harvest_clients', **options)
         print "Importing Projects..."
         call_command('import_harvest_projects', **options)
+        print "Importing Client Contact..."
+        call_command('import_harvest_client_contacts', **options)

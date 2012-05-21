@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{% if project %}Update Project for {{ project }}{% else %}Create a Project{% endif %}{% endblock title %}
+{% block title %}{% if profile %}Update Profile for {{ profile }}{% else %}Create a Profile{% endif %}{% endblock title %}
 
 {% block css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}css/chosen.css"/>
@@ -9,25 +9,24 @@
 {% block body %}
 <div class="content project project-detail">
     <div class="page-header">
-        <h1>{% if project %}Update Project for {{ project }}{% else %}Create a Project{% endif %}</h1>
+        <h1>{% if profile %}Update Profile for {{ profile }}{% else %}Create a Profile{% endif %}</h1>
     </div>
     <div class="page-header">
         <div class="row">
         {% include "messages.html" %}
             <div class="span8">
              <form method="post" action="" class="form-horizontal">{% csrf_token %}
-                <legend>Update Project</legend>
                 {% for field in form %}
                 <div class="control-group">
                     <label class="control-label" for="{{ field.label }}">{{ field.label }}</label>
                     <div class="controls">
                         {{ field }}
-                        <p class="help-block">{{ field.errors }}</p>
+                        <span class="help-inline colorize danger">{{ field.errors }}</span>
                     </div>
                 </div>
                 {% endfor %}
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-success">Save this Project</button>
+                    <button type="submit" class="btn btn-success">Save this Profile</button>
                     <button type="reset" class="btn">Cancel</button>
                 </div>
             </form>
@@ -40,14 +39,26 @@
 {% endblock body %}
 
 {% block js %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.17.custom.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
 <script type="text/javascript">
+
+function teamClient() {
+    $('#id_team, #id_team_leader, #id_client').parent().parent().hide();
+    if ($('#id_role :selected').text() == "Employee") {
+        $('#id_team, #id_team_leader').parent().parent().show();
+    } else {
+        $('#id_client').parent().parent().show();
+    }
+}
+
 $(document).ready(function() { 
-    $("#id_owner").addClass('chzn-select');
-    $("#id_owner").chosen();
-    $( "#id_start_dt" ).datepicker();
-    $( "#id_end_dt" ).datepicker();
+    teamClient();
+    $("#id_team").addClass('chzn-select');
+    $("#id_team").chosen();
+});
+
+$('#id_role').on('change', function() {
+    teamClient();
 });
 </script>
 {% endblock js %}

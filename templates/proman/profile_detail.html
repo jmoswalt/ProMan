@@ -3,11 +3,13 @@
 {% load proman_filters %}
 {% load humanize %}
 
-{% block title %}People: {{ user_object.nice_name }}{% endblock title %}
+{% block title %}{{ profile.nice_name }} - Profile{% endblock title %}
 
 {% block css %}
 <style>
 h1 .label { font-size: 18px; padding: 2px 4px; }
+.table .label { display: none; margin-right: 6px;}
+tr:hover .label { display: inline; padding: 0px 4px 0px;}
 </style>
 {% endblock css %}
 
@@ -18,7 +20,7 @@ h1 .label { font-size: 18px; padding: 2px 4px; }
     </div>
     <div class="page-header">
     <div class="row">
-        {% include "messages.html" %}
+        <div class="span12">{% include "messages.html" %}</div>
         <div class="span9">
             <form id="live-filter">
                 <input id="project-search" type="text" autocomplete="off" />
@@ -59,7 +61,7 @@ h1 .label { font-size: 18px; padding: 2px 4px; }
                 </tr>
                 <tr>
                     <td>Managed Hours</td>
-                    <th>?</th>
+                    <th>{{ profile.projects.tasks.all_hours }}</th>
                 </tr>
                 <tr>
                     <td>Average Project Start Date</td>
@@ -98,37 +100,19 @@ h1 .label { font-size: 18px; padding: 2px 4px; }
         <div class="span9">
         <h2>Open Tasks <small>(<span id="open-shown"></span> of {{ profile.tasks.open|length }}) | <a href="{% url task_create %}?next={{ request.path }}" class="colorize success">add new</a></small></h2>
             <table id="open-task-list" class="table table-striped table-bordered table-condensed task-table">
-                <thead>
-                <tr>
-                    <th class="blue">#</th>
-                    <th class="blue">Task</th>
-                    <th class="blue">Project</th>
-                    <th class="blue">Due on</th>
-                    <th class="blue">Hours</th>
-                    <th>Edit</th>
-                </tr>
-                </thead>
+                {% include "proman/profiles/task_table_header.html" with class="blue" %}
                 <tbody id="open-task-results">
-                    {% include "proman/task_table_items.html" with task_items=profile.tasks.open|slice:results_paginate %}
+                    {% include "proman/profiles/task_table_items.html" with task_items=profile.tasks.open|slice:results_paginate %}
                 </tbody>
             </table>
             {% if profile.tasks.open|length|add:0 > results_paginate|add:0 %}<a id="more-open-tasks" href="javascript:;">Show More Open Tasks</a>{% endif %}
         </div>
         <div class="span9">
-        <h2>Done Tasks <small>(<span id="done-shown"></span> of {{ profile.tasks.done|length }})</small></h2>
+        <h3>Done tasks <small>({{ profile.tasks.done|length }}) | <a id="show-done-tasks" href="javascript:;">Show</a></small></h3>
             <table id="done-task-list" class="table table-striped table-bordered table-condensed task-table">
-                <thead>
-                <tr>
-                    <th class="green">#</th>
-                    <th class="green">Task</th>
-                    <th class="green">Project</th>
-                    <th class="green">Done on</th>
-                    <th class="green">Hours</th>
-                    <th>Edit</th>
-                </tr>
-                </thead>
+                {% include "proman/profiles/task_table_header.html" with class="green" %}
                 <tbody>
-                {% include "proman/task_table_items.html" with task_items=profile.tasks.done|slice:results_paginate %}
+                {% include "proman/profiles/task_table_items.html" with task_items=profile.tasks.done|slice:results_paginate %}
                 </tbody>
             </table>
             {% if profile.tasks.done|length|add:0 > results_paginate|add:0 %}<a id="more-done-tasks" href="javascript:;">Show More Done Tasks</a>{% endif %}
@@ -149,9 +133,13 @@ $(document).ready(function(){
         headers: { 6: { sorter: false} }
     });
 
-    $('#done-project-list').hide()
+    $('#done-project-list, #done-task-list').hide()
     $('#show-done-projects').on('click', function() {
         $('#done-project-list').show()
+    });
+
+    $('#show-done-tasks').on('click', function() {
+        $('#done-task-list').show()
     });
 
     $('tr.project-row').show();
