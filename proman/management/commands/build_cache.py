@@ -18,14 +18,14 @@ class Command(BaseCommand):
                 profiles = Profile.objects.all()
                 for p in profiles:
                     p.client_name()
-                    p.get_absolute_url()
-                    p.project_data()
-                    p.task_data()
+                    #p.get_absolute_url()
+                    p.projects()
+                    p.tasks()
                 print "Profile Cache Done."
 
             if app == "projects":
                 print "Starting Project Cache..."
-                projects = Project.actives.all()
+                projects = Project.originals.all()
                 for p in projects:
                     p.tasks_logs()
                     p.tasks()
@@ -39,7 +39,7 @@ class Command(BaseCommand):
 
             if app == "tasks":
                 print "Starting Task Cache..."
-                tasks = Task.actives.all()
+                tasks = Task.originals.all()
                 for t in tasks:
                     t.project_name()
                 print "Task Cache Done."
