@@ -14,8 +14,8 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '',                      # Or path to database file if using sqlite3.
+        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'proman.db',                      # Or path to database file if using sqlite3.
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -65,7 +65,7 @@ MEDIA_URL = ''
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = os.path.join('static')
+STATIC_ROOT = os.path.join(PROJECT_ROOT, "static")
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
@@ -155,10 +155,16 @@ AUTH_PROFILE_MODULE = 'proman.Profile'
 
 SITE_CACHE_KEY = "proman"
 
+LOCAL_CACHE_PATH = os.path.join(PROJECT_ROOT, "cache")
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/var/tmp/django_cache',
+        'LOCATION': LOCAL_CACHE_PATH,
+        'TIMEOUT': 60000000,
+        'OPTIONS': {
+            'MAX_ENTRIES': 100000
+        }
     }
 }
 
