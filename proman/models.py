@@ -41,6 +41,12 @@ class Team(models.Model):
     def __unicode__(self):
         return self.name
 
+    def _profiles(self):
+        return Profile.objects.filter(team_id=self.pk).order_by('team_leader', '-user__is_active')
+
+    def profiles(self):
+        return self._profiles()
+
 
 class Client(models.Model):
     name = models.CharField(max_length=100)

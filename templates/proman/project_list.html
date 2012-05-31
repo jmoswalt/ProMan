@@ -5,7 +5,7 @@
 {% block body %}
 <div class="content project project-list">
     <div class="page-header">
-        <h1>Project List <small>(<span id="projects-shown"></span> of {{ projects_total  }}) | <a href="{% url project_create %}?next={{ request.path }}" class="colorize success">add new</a></small><small class="pull-right">
+        <h1>Project List <small>(<span id="projects-shown">Loading...</span> {{ projects_total  }}) | <a href="{% url project_create %}?next={{ request.path }}" class="colorize success">add new</a></small><small class="pull-right">
             <select id="display-options">
                 <option {% if display == "all" %}selected=selected{% endif %} value="{% url projects %}?display=all">Show all</option>
                 <option {% if display == "open" %}selected=selected{% endif %} value="{% url projects %}">Show only open</option>
@@ -19,7 +19,6 @@
             <form id="live-filter">
                 <input id="project-search" type="text" autocomplete="off" />
                 <span class="help-inline">Start Typing for Live Filtering</span><br />
-                {% if projects_total|add:0 > results_paginate|add:0 %}<a id="more-projects" href="javascript:;">Load More Projects</a>{% endif %}
             </form>
             <table id="project-list" class="table table-striped table-bordered table-condensed">
                 {% include "proman/projects/project_table_header.html" %}
@@ -45,22 +44,13 @@ $(document).ready(function() {
 
     $('tr.project-row').show();
 
-    $('form#live-filter').on('focus', '#project-search', function(e) {
-        var tmpVAL = $('#project-search').val().toLowerCase();
-        var loadedCount = $('#projects-shown').text();
-        var totalCount = $("#project-list tbody tr").size();
-        if (tmpVAL.length == 0 && loadedCount <= {{ projects_total }}) {
-            // load all projects, update numbers
-            $.get("?project_search="+totalCount+extraqs, function(html) { 
-              $("#project-list tbody").append(html);
-              $("#project-list").tablesorter({sortList: [[8,1]]});
-              var totalDone = $("#project-list tbody tr:visible").size();
-              $("#projects-shown").text(totalDone);
-            });
-            $("#more-projects").hide();
-        }
+    $.get("?project_search={{ results_paginate }}"+extraqs, function(html) { 
+          $("#project-list tbody").append(html);
+          $("#project-list").tablesorter({sortList: [[8,1]]});
+          var totalDone = $("#project-list tbody tr:visible").size();
+          $("#projects-shown").text(totalDone+" of");
+        });
 
-    });
     $('form#live-filter').on('keyup', '#project-search', function(e) {
         var tmpVAL = $('#project-search').val().toLowerCase();
         $('.project-row').each(function() {
@@ -74,22 +64,9 @@ $(document).ready(function() {
           }
         });
         var totalDone = $("#project-list tbody tr:visible").size();
-        $("#projects-shown").text(totalDone);
+        $("#projects-shown").text(totalDone+" of");
     });
 
-    $("#projects-shown").text($("#project-list tbody tr").size());
-
-    var projectInc = 1;
-    $("#more-projects").click(function(){
-        projectInc++;
-        $.get("?project_page="+projectInc+extraqs, function(html) { 
-            $("#project-list tbody").append(html);
-            $("#project-list").tablesorter({sortList: [[8,1]]});
-            var totalDone = $("#project-list tbody tr").size();
-            if (totalDone < (projectInc*{{ results_paginate }})) {$("#more-projects").hide();}
-            $("#projects-shown").text(totalDone);
-        });
-    });
     $('#display-options').on("change", function() {
         window.open(this.options[this.selectedIndex].value, '_self');
     });

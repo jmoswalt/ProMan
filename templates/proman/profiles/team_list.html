@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% load proman_tags %}
+
+{% block title %}Employee List{% endblock title %}
+
+{% block body %}
+<div class="content project project-detail">
+    <div class="page-header">
+        <h1>Employees by Team <small>{{ active_employees|length }} active (<em>{{ inactive_employees|length }} inactive</em>) | {% profile_add_link %}</small></h1>
+    </div>
+    <div class="row">
+        <div class="span12">
+            {% include "messages.html" %}
+        </div>
+    </div>
+    {% for t in teams %}
+    {% cycle "<div class='row'>" "" "" %}
+        <div class="span4">
+            <h2>{% firstof t.name "(none)" %}</h2>
+            <ul>
+                {% for p in t.profiles %}
+                    <li{% if not p.user.is_active %} style="font-style: italic; color: #999;"{% endif %}>{{ p.nice_name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% cycle "" "" "</div>" %}
+    {% endfor %}
+</div>
+{% endblock body %}
+
+{% block js %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.tablesorter.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+    if ($("#employee-list").children().length > 0) {
+        $("#employee-list").tablesorter({
+            sortList: [[9,1]],
+        });
+    }
+
+    if ($("#inactive-employee-list").children().length > 0) {
+        $("#inactive-employee-list").tablesorter({
+            sortList: [[1,1]],
+        });
+    }
+
+
+    $("#inactives").hide();
+    $('.show-inactive').on('click', function() {
+        $("#inactives").toggle();
+    });
+});
+</script>
+{% endblock js %}

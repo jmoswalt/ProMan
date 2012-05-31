@@ -5,6 +5,17 @@
 {% block title %}Employee List{% endblock title %}
 
 {% block body %}
+<style>
+.chart div {
+  font: 10px sans-serif;
+  background-color: steelblue;
+  text-align: right;
+  padding: 3px;
+  margin: 1px;
+  color: white;
+}
+</style>
+
 <div class="content project project-detail">
     <div class="page-header">
         <h1>Employees <small>{{ active_employees|length }} active | {% profile_add_link %}</small></h1>

@@ -25,7 +25,7 @@ from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.core.mail import send_mail
 
-from proman.models import Project, Task, Profile, ContentImport
+from proman.models import Project, Task, Profile, ContentImport, Team
 from proman.forms import TaskForm, TaskMiniForm, TaskCloseForm, ProjectForm, ProfileForm
 from proman.utils import get_task_change_message, get_project_change_message, get_profile_change_message
 
@@ -67,10 +67,17 @@ class UserListView(ListView):
         context['open_tasks_inactives'] = Task.objects.filter(version=False, owner_id__in=inactive_pks, completed=False)
         return context
 
+
 class ContactListView(UserListView):
     queryset = Profile.objects.filter(user__is_staff=False).order_by('last_name')
     context_object_name = "profiles"
     template_name = "proman/client_list.html"
+
+
+class TeamListView(UserListView):
+    queryset = Team.objects.all().order_by('name')
+    context_object_name = "teams"
+    template_name = "proman/profiles/team_list.html"
 
 
 class UserCreateView(CreateView):
@@ -473,16 +480,16 @@ class ProjectListView(ListView):
     def get_context_data(self, **kwargs):
         context = super(ProjectListView, self).get_context_data(**kwargs)
 
-        projects = Project.objects.filter(version=False).exclude(status="Done").order_by('-status', 'start_dt')
+        projects = Project.originals.exclude(status="Done").order_by('start_dt')
         context['display'] = "open"
         if self.request.GET.get('display'):
             display = self.request.GET.get('display')
             if display == "all":
                 context['display'] = display
-                projects = Project.objects.filter(version=False).order_by('-status', 'start_dt')
+                projects = Project.originals.order_by('start_dt')
             if display == "done":
                 context['display'] = display
-                projects = Project.objects.filter(version=False, status="Done").order_by('-status', 'start_dt')
+                projects = Project.originals.order_by('start_dt')
         context['filtered_projects'] = projects
         context['projects_total'] = projects.count()
         context['results_paginate'] = "25"
@@ -492,11 +499,11 @@ class ProjectListView(ListView):
     def render_to_response(self, context):
         """Used to pull paginated items via a GET"""
         if self.request.method == 'GET':
-            if self.request.GET.get('project_page'):
-                project_page = self.request.GET.get('project_page')
-                paginator = Paginator(context['filtered_projects'], context['results_paginate'])
-                projects = paginator.page(project_page).object_list
-                return render_to_response("proman/project_table_items.html", locals(), context_instance=RequestContext(self.request))
+#             if self.request.GET.get('project_page'):
+#                 project_page = self.request.GET.get('project_page')
+#                 paginator = Paginator(context['filtered_projects'], context['results_paginate'])
+#                 projects = paginator.page(project_page).object_list
+#                 return render_to_response("proman/project_table_items.html", locals(), context_instance=RequestContext(self.request))
 
             if self.request.GET.get('project_search'):
                 project_count = self.request.GET.get('project_search')

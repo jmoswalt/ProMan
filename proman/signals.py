@@ -27,7 +27,9 @@ def clear_profile_tasks_cache(sender, instance, **kwargs):
     for key in profile_keys:
         profile_clear_keys.append((".".join([settings.SITE_CACHE_KEY, '%s', str(instance.owner_id)]) % key))
 
-    profile_project_keys = ['profile.projects']
+    profile_project_keys = [
+        'profile.projects'
+    ]
     for key in profile_project_keys:
         profile_clear_keys.append((".".join([settings.SITE_CACHE_KEY, '%s', str(instance.project.owner_id)]) % key))
 

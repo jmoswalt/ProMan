@@ -20,6 +20,7 @@ urlpatterns = patterns('',
     url(r'^people/update/(?P<pk>\d+)/$', views.UserUpdateView.as_view(), name='user_update'),
     url(r'^people/(?P<username>[\w\@\.\-]+)/$', views.UserDetailView.as_view(), name='user_detail'),
     url(r'^people/$', views.UserListView.as_view(), name='users'),
+    url(r'^teams/$', views.TeamListView.as_view(), name='teams'),
 
     # Projects
     url(r'^projects/add/$', views.ProjectCreateView.as_view(), name='project_create'),
