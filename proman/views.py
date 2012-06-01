@@ -493,6 +493,7 @@ class ProjectListView(ListView):
         context['filtered_projects'] = projects
         context['projects_total'] = projects.count()
         context['results_paginate'] = "25"
+        context['technologies'] = projects.values('technology').annotate(total=Count('technology'))
         context['projects'] = projects[:context['results_paginate']]
         return context
 

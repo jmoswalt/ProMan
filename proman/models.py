@@ -140,6 +140,13 @@ class Profile(models.Model):
             cache.set(cache_key, cached)
         return cached
 
+    def role_class(self):
+        role = self.role()
+        rc = "warning"
+        if role == "staff":
+            rc = "success"
+        return rc
+
     ###########################
     # Project Related Methods #
     ###########################
