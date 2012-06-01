@@ -169,7 +169,7 @@ CACHES = {
     }
 }
 
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_ENGINE = "django.contrib.sessions.backends.cache_db"
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

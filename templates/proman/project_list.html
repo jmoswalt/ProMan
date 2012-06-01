@@ -29,6 +29,7 @@
             </form>
         </div>
         <div class="span6">
+            {% if technologies|length <= 6 %}
             <div id="tech-count" class="pagination">
                 <ul>
                 {% for tech in technologies %}
@@ -36,6 +37,7 @@
                 {% endfor %}
                 </ul>
             </div>
+            {% endif %}
         </div>
         <div class="span12">
             <table id="project-list" class="table table-striped table-bordered table-condensed">
