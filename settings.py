@@ -164,12 +164,10 @@ CACHES = {
         'LOCATION': LOCAL_CACHE_PATH,
         'TIMEOUT': 60000000,
         'OPTIONS': {
-            'MAX_ENTRIES': 100000
+            'MAX_ENTRIES': 10000000
         }
     }
 }
-
-SESSION_ENGINE = "django.contrib.sessions.backends.cache_db"
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
