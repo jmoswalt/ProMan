@@ -149,6 +149,7 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'proman',
+    'gunicorn',
 )
 
 AUTH_PROFILE_MODULE = 'proman.Profile'

@@ -1,5 +1,6 @@
 Django==1.4
 django-registration
 django-grappelli
+gunicorn
 
 git+git://github.com/lann/Harvest@new_version#egg=harvest
