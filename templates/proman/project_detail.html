@@ -3,6 +3,7 @@
 {% load proman_tags %}
 {% load humanize %}
 {% load proman_filters %}
+{% load markup %}
 
 {% block title %}Project: {{ project.name }}{% endblock title %}
 
@@ -71,7 +72,7 @@ tr.stuck { background-color: #FEE9CC; }
                         <p>
                     </div>
                     <div class="span8">
-                    {% if project.description %}<p>{{ project.description|safe|linebreaks }}</p>{% endif %}
+                    {% if project.description %}<p>{{ project.description|markdown }}</p>{% endif %}
                     </div>
                 </div>
             </div>
@@ -146,7 +147,7 @@ tr.stuck { background-color: #FEE9CC; }
 {% endblock body %}
 
 {% block js %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.17.custom.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.21.custom.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.tablesorter.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
 <script type="text/javascript">

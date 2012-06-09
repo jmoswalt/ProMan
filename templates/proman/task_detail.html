@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load humanize %}
+{% load markup %}
 
 {% block title %}Task: {{ task.title }}{% endblock title %}
 
@@ -26,7 +27,7 @@
                 <p><strong>Overdue!!!</strong> This task was due {{ task.due_dt|naturaltime }}. Please do it or update it and tell {{ task.original_creator.profile.abbr_name }}</p>
             </div>
             {% endif %}
-            <div>{{ task.description|safe|linebreaks }}</div>
+            <div>{{ task.description|markdown }}</div>
             {% if not task.completed %}
             <p><a href="#close-form-modal" data-toggle="modal" class="btn btn-success">Close Task</a></p>
             {% endif %}
@@ -86,7 +87,7 @@
 {% endblock body %}
 
 {% block js %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.17.custom.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.21.custom.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-modal.js"></script>
 <script type="text/javascript">
 $(document).ready(function() {

@@ -4,6 +4,7 @@
 
 {% block css %}
 <link rel="stylesheet" href="{{ STATIC_URL }}css/chosen.css"/>
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.markedit.css"/>
 {% endblock %}
 
 {% block body %}
@@ -39,13 +40,16 @@
 {% endblock body %}
 
 {% block js %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.17.custom.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.21.custom.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/chosen.jquery.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.markedit.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/showdown.js"></script>
 <script type="text/javascript">
 $(document).ready(function() { 
     $("#id_owner, #id_project").addClass('chzn-select');
     $(".chzn-select").chosen();
     $( "#id_due_dt, #id_completed_dt" ).datepicker();
+    $('#id_description').markedit();
 });
 </script>
 {% endblock js %}
