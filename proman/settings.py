@@ -1,7 +1,9 @@
 import os
 # Django settings for proman project.
 
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+PROJECT_ROOT = os.path.abspath('.')
+
+print PROJECT_ROOT
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG

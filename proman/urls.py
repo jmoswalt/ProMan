@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.conf.urls.defaults import *
 from django.views.generic import TemplateView
 from django.views.generic.simple import redirect_to
@@ -49,4 +50,8 @@ urlpatterns = patterns('',
     # Waiting on 1.4 compatibility
     # url(r'^grappelli/', include('grappelli.urls')),
     url(r'^admin/', include(admin.site.urls)),
+)
+
+urlpatterns += patterns('',
+    url(r'^static/(.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
 )
