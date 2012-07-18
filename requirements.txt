@@ -1,9 +1,8 @@
 Django==1.4
-dj-database-url==0.2.1
-psycopg2==2.4.5
-gunicorn==0.14.5
-
 django-registration==0.8
 django-grappelli==2.3.8
+gunicorn==0.14.5
+dj-database-url==0.2.1
+psycopg2==2.4.5
 
 git+git://github.com/lann/Harvest@new_version#egg=harvest
