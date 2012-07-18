@@ -3,7 +3,7 @@ from django.views.generic import TemplateView
 from django.views.generic.simple import redirect_to
 from registration import urls as reg_urls
 
-from proman import views, signals
+from pm import views, signals
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin

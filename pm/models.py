@@ -12,7 +12,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
-from proman.managers import ProjectManager, TaskManager, ProfileManager
+from pm.managers import ProjectManager, TaskManager, ProfileManager
 
 NOW_STR = datetime.strftime(timezone.now(), "%Y%m%d")
 

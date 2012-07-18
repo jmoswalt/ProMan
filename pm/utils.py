@@ -4,7 +4,7 @@ from django.utils import simplejson as json
 from django.core.cache import cache
 from django.conf import settings
 
-from proman.models import Setting
+from pm.models import Setting
 
 def get_change_message(old, new, fields):
     if old and new and fields:

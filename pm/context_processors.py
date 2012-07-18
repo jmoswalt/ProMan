@@ -1,8 +1,8 @@
 from django.core.cache import cache
 from django.conf import settings
 
-from proman.utils import get_cached_setting
-from proman.models import Profile, Project
+from pm.utils import get_cached_setting
+from pm.models import Profile, Project
 
 def active_users(request):
     return {

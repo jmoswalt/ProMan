@@ -3,7 +3,8 @@ from django import forms
 from django.contrib.admin import widgets
 from django.utils import timezone
 from django.contrib.auth.models import User
-from proman.models import Task, Project, Profile
+
+from pm.models import Task, Project, Profile
 
 DUE_DT_INITIAL = timezone.now() + timedelta(weeks=1)
 COMPLETED_DT_INITIAL = timezone.now()

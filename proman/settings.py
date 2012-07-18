@@ -109,10 +109,10 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'urls'
+ROOT_URLCONF = 'proman.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'wsgi.application'
+WSGI_APPLICATION = 'proman.wsgi.application'
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     "django.contrib.auth.context_processors.auth",
@@ -123,8 +123,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.tz",
     "django.contrib.messages.context_processors.messages",
     "django.core.context_processors.request",
-    "proman.context_processors.active_users",
-    "proman.context_processors.app_settings",
+    "pm.context_processors.active_users",
+    "pm.context_processors.app_settings",
 )
 
 TEMPLATE_DIRS = (
@@ -149,11 +149,11 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
-    'proman',
     'gunicorn',
+    'pm',
 )
 
-AUTH_PROFILE_MODULE = 'proman.Profile'
+AUTH_PROFILE_MODULE = 'pm.Profile'
 
 SITE_CACHE_KEY = "proman"
 
@@ -198,10 +198,3 @@ LOGGING = {
         },
     }
 }
-
-# local settings for development
-try:
-    from local_settings import *
-except ImportError:
-    pass
-

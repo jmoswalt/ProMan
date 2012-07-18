@@ -3,7 +3,7 @@ from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth.models import User
 
-from proman.models import Task, Profile, Project, SUNDAY_STR
+from pm.models import Task, Profile, Project, SUNDAY_STR
 
 def clear_project_tasks_cache(sender, instance, created, **kwargs):
     if not created:

@@ -25,9 +25,9 @@ from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.core.mail import send_mail
 
-from proman.models import Project, Task, Profile, ContentImport, Team
-from proman.forms import TaskForm, TaskMiniForm, TaskCloseForm, ProjectForm, ProfileForm
-from proman.utils import get_task_change_message, get_project_change_message, get_profile_change_message
+from pm.models import Project, Task, Profile, ContentImport, Team
+from pm.forms import TaskForm, TaskMiniForm, TaskCloseForm, ProjectForm, ProfileForm
+from pm.utils import get_task_change_message, get_project_change_message, get_profile_change_message
 
 START_DT_INITIAL = timezone.now()
 END_DT_INITIAL = timezone.now() + timedelta(days=90)
