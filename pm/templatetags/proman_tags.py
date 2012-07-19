@@ -1,6 +1,6 @@
 from django.template import Library
 
-from proman.models import HOURLY_RATE
+from pm.models import HOURLY_RATE
 
 register = Library()
 

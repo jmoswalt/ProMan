@@ -2,8 +2,8 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand, CommandError
 
-from proman.models import Client, ThirdParty
-from proman.sugarcrm import Sugarcrm
+from pm.models import Client, ThirdParty
+from pm.sugarcrm import Sugarcrm
 
 class Command(BaseCommand):
     """

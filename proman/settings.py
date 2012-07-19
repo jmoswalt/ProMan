@@ -153,9 +153,14 @@ INSTALLED_APPS = (
     'pm',
 )
 
-#AUTH_PROFILE_MODULE = 'pm.models.Profile'
+AUTH_PROFILE_MODULE = 'pm.Profile'
 
 SITE_CACHE_KEY = "proman"
+
+HV_URL = env('HV_URL', '')
+HV_USER = env('HV_USER', '')
+HV_PASS = env('HV_PASS', '')
+
 
 LOCAL_CACHE_PATH = os.path.join(PROJECT_ROOT, "cache")
 

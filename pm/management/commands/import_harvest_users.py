@@ -7,8 +7,8 @@ from django.shortcuts import get_object_or_404
 from django.core.cache import cache
 from django.utils import timezone
 
-from proman.models import Profile, Team, ContentImport
-from proman.harvest import Harvest
+from pm.models import Profile, Team, ContentImport
+from pm.harvest import Harvest
 
 class Command(BaseCommand):
     """

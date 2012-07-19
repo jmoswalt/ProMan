@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from proman.models import Profile, Project, Task
+from pm.models import Profile, Project, Task
 
 class Command(BaseCommand):
     """

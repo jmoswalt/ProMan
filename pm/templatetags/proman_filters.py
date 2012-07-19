@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.core.cache import cache
 
-from proman.models import Task
+from pm.models import Task
 
 register = template.Library()
 
