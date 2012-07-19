@@ -525,7 +525,7 @@ class Project(models.Model):
             key = '.'.join(keys)
             if cache.get(key) is None:
                 try:
-                    from proman.harvest import Harvest
+                    from pm.harvest import Harvest
                     entries = Harvest().project_entries(
                         hpi,
                         datetime.strftime(self.start_dt, "%Y%m%d"),

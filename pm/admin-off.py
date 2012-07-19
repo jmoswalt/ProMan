@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.utils.encoding import iri_to_uri
 
-from proman.models import Project, Task
-from proman.forms import TaskForm
+from pm.models import Project, Task
+from pm.forms import TaskForm
 
 
 
