@@ -71,8 +71,7 @@ def clear_project_cache(sender, instance, **kwargs):
 
 
 def create_first_user_profile(sender, instance, created, **kwargs):
-    if not instance.profile:
-        Profile.objects.create(user=instance)
+    Profile.objects.get_or_create(user=instance)
 
 
 def update_active_user_cache(sender, instance, created, **kwargs):
