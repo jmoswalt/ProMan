@@ -1,6 +1,6 @@
 from django.template import Library
 
-from pm.models import HOURLY_RATE
+from pm.models import DEFAULT_RATE, get_setting
 
 register = Library()
 
@@ -10,7 +10,7 @@ def harvest_progress_bar(context, project):
     if harvest_on:
         context.update({
             "project": project,
-            "hourly_rate": HOURLY_RATE,
+            "hourly_rate": get_setting('hourly_rate', DEFAULT_RATE),
         })
         return context
     return ""
