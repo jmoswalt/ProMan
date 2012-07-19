@@ -4,5 +4,7 @@ django-grappelli==2.3.8
 gunicorn==0.14.5
 dj-database-url==0.2.1
 psycopg2==2.4.5
+pylibmc==1.2.2
+django-pylibmc-sasl==0.2.4
 
 git+git://github.com/lann/Harvest@new_version#egg=harvest
