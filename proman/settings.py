@@ -3,6 +3,11 @@ import dj_database_url
 
 PROJECT_ROOT = os.path.abspath('.')
 
+try:
+    import local
+except ImportError:
+    pass
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -14,17 +19,6 @@ MANAGERS = ADMINS
 
 DATABASES = {'default': dj_database_url.config(default='postgres://localhost')}
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-#         'NAME': 'proman.db',                      # Or path to database file if using sqlite3.
-#         'USER': '',                      # Not used with sqlite3.
-#         'PASSWORD': '',                  # Not used with sqlite3.
-#         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-#         'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
-#     }
-# }
-
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
@@ -32,7 +26,7 @@ DATABASES = {'default': dj_database_url.config(default='postgres://localhost')}
 # timezone as the operating system.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = None
+TIME_ZONE = 'UTC'
 
 
 # Language code for this installation. All choices can be found here:
@@ -155,7 +149,7 @@ INSTALLED_APPS = (
     'pm',
 )
 
-AUTH_PROFILE_MODULE = 'pm.Profile'
+#AUTH_PROFILE_MODULE = 'pm.models.Profile'
 
 SITE_CACHE_KEY = "proman"
 

@@ -33,7 +33,6 @@ def get_setting(name, default_value=None):
 
 
 DEFAULT_RATE = 100
-HOURLY_RATE = get_setting('hourly_rate', DEFAULT_RATE)
 
 class Team(models.Model):
     name = models.CharField(max_length=100)
@@ -538,7 +537,8 @@ class Project(models.Model):
                         for d in entries:
                             for e in d.itervalues():
                                 hours = hours + float(e['hours'])
-                    value = int(round(hours*HOURLY_RATE))
+                    hourly_rate = get_setting('hourly_rate', DEFAULT_RATE)
+                    value = int(round(hours*hourly_rate))
                 except:
                     value = 0
                 cache.set(key, value)

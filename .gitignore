@@ -3,6 +3,7 @@ venv
 cache
 
 local_settings.py
+local.py
 *.db
 
 # ignore static
