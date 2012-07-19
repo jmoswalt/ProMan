@@ -1,5 +1,9 @@
 import os
+from os import environ
 import dj_database_url
+
+# Helper lambda for gracefully degrading environmental variables:
+env = lambda e, d: environ[e] if environ.has_key(e) else d
 
 PROJECT_ROOT = os.path.abspath('.')
 
@@ -11,13 +15,14 @@ except ImportError:
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
-ADMINS = (
-    ('JMO', 'jmo@jmo.me'),
-)
-
-MANAGERS = ADMINS
-
 DATABASES = {'default': dj_database_url.config(default='postgres://localhost')}
+
+EMAIL_HOST = env('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = env('EMAIL_PORT', 587)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', 'your_email@example.com')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -27,7 +32,6 @@ DATABASES = {'default': dj_database_url.config(default='postgres://localhost')}
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
 TIME_ZONE = 'UTC'
-
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
