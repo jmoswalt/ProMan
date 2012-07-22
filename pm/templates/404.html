@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - Project Monitoring, Project Management App{% endblock title %}
+
+{% block body %}
+      <!-- Main hero unit for a primary marketing message or call to action -->
+      <div class="hero-unit">
+        <h2>We can't find that page.</h2>
+        <p>Sorry, but we couldn't find {{ request.path }}</p>
+        <p>
+        {% if request.user.is_authenticated %}
+        <a href="{% url user_detail request.user.username %}" class="btn btn-success large">Go to my projects &raquo;</a>
+        {% else %}
+        <a href="{% url login %}?next={% url user_current %}" class="btn btn-success large">Login now &raquo;</a>
+        {% endif %}</p>
+      </div>
+{% endblock body %}

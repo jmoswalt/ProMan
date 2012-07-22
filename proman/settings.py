@@ -26,8 +26,8 @@ except:
 # -------------------------------------- #
 # DEBUG
 # -------------------------------------- #
-DEBUG = env('DEBUG', False)
-TEMPLATE_DEBUG = env('TEMPLATE_DEBUG', DEBUG)
+DEBUG = bool(env('DEBUG', False))
+TEMPLATE_DEBUG = bool(env('TEMPLATE_DEBUG', DEBUG))
 
 
 # -------------------------------------- #
