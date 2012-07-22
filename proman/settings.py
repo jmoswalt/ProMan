@@ -10,13 +10,18 @@ WSGI_APPLICATION = 'proman.wsgi.application'
 env = lambda e, d: environ[e] if environ.has_key(e) else d
 
 # Load the .env file into the os.environ for secure information
-for line in open(os.path.join(PROJECT_ROOT, '.env'), 'r').readlines():
-    env_key = line.rstrip().split("=")[0]
-    if env_key:
-        # set the environment variable to the value with the start and
-        # end quotes taken off.
-        environ[env_key] = ''.join(line.rstrip().split("=")[1:])[1:-1]
-
+try:
+    env_file = open(os.path.join(PROJECT_ROOT, '.env'), 'r')
+    for line in env_file.readlines():
+        env_key = line.rstrip().split("=")[0]
+        if env_key:
+            # set the environment variable to the value with the start and
+            # end quotes taken off.
+            environ[env_key] = ''.join(line.rstrip().split("=")[1:])[1:-1]
+    env_file.close()
+except:
+    # no .env file or errors in the file
+    pass
 
 # -------------------------------------- #
 # DEBUG
