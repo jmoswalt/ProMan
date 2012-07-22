@@ -198,6 +198,7 @@ class UserDetailView(DetailView):
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
+        print broken
         return super(UserDetailView, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
