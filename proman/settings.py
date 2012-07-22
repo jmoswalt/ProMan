@@ -7,13 +7,13 @@ env = lambda e, d: environ[e] if environ.has_key(e) else d
 
 PROJECT_ROOT = os.path.abspath('.')
 
+DEBUG = False
+TEMPLATE_DEBUG = DEBUG
+
 try:
     import local
 except ImportError:
     pass
-
-DEBUG = True
-TEMPLATE_DEBUG = DEBUG
 
 DATABASES = {'default': dj_database_url.config(default='postgres://localhost')}
 
@@ -69,7 +69,7 @@ STATIC_ROOT = os.path.join(PROJECT_ROOT, "static")
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
-STATIC_URL = '/static/'
+STATIC_URL = env('STATIC_URL', '/static/')
 
 # Admin media pulled from Django Grappelli
 # ADMIN_MEDIA_PREFIX = STATIC_URL + "grappelli/"
@@ -89,8 +89,14 @@ STATICFILES_FINDERS = (
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
+STATICFILES_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
+
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID', '')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY', '')
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME', '')
+
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'tn)4=0no5r3y*km#oky2+ny@=h(0qv^=1_c&amp;@+_2l2o(=lw0dx'
+SECRET_KEY = env('SECRET_KEY', 'secret')
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
