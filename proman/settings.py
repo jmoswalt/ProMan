@@ -196,6 +196,7 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
     'gunicorn',
     's3_folder_storage',
+    'raven.contrib.django',
     'pm',
 )
 
