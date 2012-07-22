@@ -8,7 +8,9 @@ dj-database-url==0.2.1
 psycopg2==2.4.5
 pylibmc==1.2.2
 django-pylibmc-sasl==0.2.4
+
 django-storages==1.1.5
 boto==2.5.2
+django-s3-folder-storage==0.1
 
 git+git://github.com/lann/Harvest@new_version#egg=harvest

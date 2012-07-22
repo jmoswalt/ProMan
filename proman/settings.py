@@ -89,7 +89,8 @@ STATICFILES_FINDERS = (
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
-STATICFILES_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
+STATICFILES_STORAGE = 's3_folder_storage.s3.StaticStorage'
+STATIC_S3_PATH = env('STATIC_S3_PATH', 'static')
 
 AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID', '')
 AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY', '')
@@ -156,6 +157,7 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'gunicorn',
+    's3_folder_storage',
     'pm',
 )
 
