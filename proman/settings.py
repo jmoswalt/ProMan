@@ -23,6 +23,7 @@ except:
     # no .env file or errors in the file
     pass
 
+
 # -------------------------------------- #
 # DEBUG
 # -------------------------------------- #
@@ -197,10 +198,18 @@ INSTALLED_APPS = (
     'gunicorn',
     's3_folder_storage',
     'raven.contrib.django',
+    'djcelery',
     'pm',
 )
 
 AUTH_PROFILE_MODULE = 'pm.Profile'
+
+# -------------------------------------- #
+# CELERY
+# -------------------------------------- #
+import djcelery
+djcelery.setup_loader()
+BROKER_URL = 'django://'
 
 
 # -------------------------------------- #

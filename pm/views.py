@@ -27,6 +27,7 @@ from django.core.mail import send_mail
 
 from pm.models import Project, Task, Profile, ContentImport, Team
 from pm.forms import TaskForm, TaskMiniForm, TaskCloseForm, ProjectForm, ProfileForm
+from pm.tasks import print_out
 from pm.utils import get_task_change_message, get_project_change_message, get_profile_change_message
 
 START_DT_INITIAL = timezone.now()
@@ -202,7 +203,7 @@ class UserDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(UserDetailView, self).get_context_data(**kwargs)
-        #TODO: Move all of these contexts into methods for the Profile 
+        #task_test = print_out.delay(context['profile'])
 
         # Pull projects for a client
         if context['profile'].client:
