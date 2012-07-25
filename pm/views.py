@@ -6,6 +6,7 @@ from django.db.models import Q, Sum, Avg, Count
 from django.contrib.admin.models import LogEntry, ADDITION, CHANGE, DELETION
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.sites.models import Site
 from django.utils.encoding import force_unicode
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
@@ -24,10 +25,11 @@ from django.core.urlresolvers import reverse
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.core.mail import send_mail
+from django.views.generic.base import View
 
 from pm.models import Project, Task, Profile, ContentImport, Team
 from pm.forms import TaskForm, TaskMiniForm, TaskCloseForm, ProjectForm, ProfileForm
-from pm.tasks import print_out
+from pm.tasks import send_notification
 from pm.utils import get_task_change_message, get_project_change_message, get_profile_change_message
 
 START_DT_INITIAL = timezone.now()
@@ -203,7 +205,6 @@ class UserDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(UserDetailView, self).get_context_data(**kwargs)
-        #task_test = print_out.delay(context['profile'])
 
         # Pull projects for a client
         if context['profile'].client:
@@ -244,7 +245,26 @@ class UserDetailView(DetailView):
 
         return render_to_response(self.template_name, context, context_instance=RequestContext(self.request))
 
-class TaskCreateView(CreateView):
+
+class TaskNotificationMixin(View):
+
+    def task_notification(self):
+        """ Create and send a notification as a celery task """
+        site_url = Site.objects.all()[0].domain
+        notice = send_notification.delay('[PM] Task Assigned: %s (%s)' % (self.object.title, self.object.project.client), 'You have just been assigned the following task from <a href="http://%s%s">%s</a>: <br /><br /><strong>%s</strong> (http://%s%s)<br />Due: (%s days)<br /><br /> %s<br /><br />' % (
+                site_url,
+                self.request.user.profile.get_absolute_url(),
+                self.request.user.profile.nice_name(),
+                self.object.title, 
+                site_url,
+                self.object.get_absolute_url(),
+                self.object.due_age(),
+                self.object.description
+            ), self.request.user.email, [self.object.owner.email], fail_silently=False)
+        return notice
+
+
+class TaskCreateView(CreateView, TaskNotificationMixin):
     """
     Creates a Task
     """
@@ -282,6 +302,10 @@ class TaskCreateView(CreateView):
             change_message  = change_message
         )
 
+        if self.request.user.profile != self.object.owner:
+            # If you aren't the owner, send the owner an email.
+            self.task_notification()
+
         return HttpResponseRedirect(self.get_success_url())
     
     def get_success_url(self):
@@ -293,7 +317,7 @@ class TaskCreateView(CreateView):
         return HttpResponseRedirect(reverse('project_detail', args=[self.object.project.pk]))
 
 
-class TaskUpdateView(UpdateView):
+class TaskUpdateView(UpdateView, TaskNotificationMixin):
     """
     Updates a Task
     """
@@ -334,9 +358,9 @@ class TaskUpdateView(UpdateView):
             action_flag     = action_flag,
             change_message  = change_message
         )
-#         if self.request.user != self.object.owner and new_obj.owner != self.object.owner:
-#             # If you aren't changing to yourself, and the owner changed, send them an email.
-#             send_mail('[PM] Task Assigned %s' % self.object.title, "You've just been assigned the following task from %s: <br />%s (Link: %s%s)<br /><br /> %s<br /><br />" % (self.request.user.username, self.object.title, settings.SITE_URL, self.object.get_absolute_url(), self.object.description), self.request.user.email, [self.object.owner.email], fail_silently=False)
+        if self.request.user.profile != self.object.owner and new_obj.owner != self.object.owner:
+            # If you aren't changing to yourself, and the owner changed, send them an email.
+            self.task_notification()
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -348,7 +372,8 @@ class TaskUpdateView(UpdateView):
         messages.success(self.request, 'Successfully updated this task.', extra_tags='success task-%s' % self.object.pk)
         return self.object.get_absolute_url()
 
-class TaskCloseUpdateView(TaskUpdateView):
+
+class TaskCloseUpdateView(TaskUpdateView, TaskNotificationMixin):
     """
     Mini Form to Close a Task
     """
@@ -361,6 +386,7 @@ class TaskCloseUpdateView(TaskUpdateView):
         
         messages.success(self.request, 'Successfully closed this task.', extra_tags='success task-%s' % self.object.pk)
         return self.object.get_absolute_url()
+
 
 class TaskDetailView(DetailView):
     model = Task
